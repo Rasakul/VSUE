@@ -134,101 +134,58 @@ public class Client implements IClientCli, Runnable {
         }
     }
 
-    @Override
-    public String login(String username, String password) throws IOException {
-
-        TCPClientListener tcpClientListener = new TCPClientListener(socket_tcp,
-                userResponseStream,
-                "login",
-                new ArrayList<>(Arrays.asList(username, password)));
+    private String processTCP(String command, ArrayList<String> args) {
+        TCPClientListener tcpClientListener = new TCPClientListener(socket_tcp, userResponseStream, command, args);
         activListener.add(tcpClientListener);
         executor.execute(tcpClientListener);
         return null;
     }
 
-    @Override
-    public String logout() throws IOException {
-
-        TCPClientListener tcpClientListener = new TCPClientListener(socket_tcp,
-                userResponseStream,
-                "logout",
-                null);
-        activListener.add(tcpClientListener);
-        executor.execute(tcpClientListener);
-        return null;
-    }
-
-    @Override
-    public String send(String message) throws IOException {
-
-        TCPClientListener tcpClientListener = new TCPClientListener(socket_tcp,
-                userResponseStream,
-                "send",
-                new ArrayList<>(Collections.singletonList(message)));
-        activListener.add(tcpClientListener);
-        executor.execute(tcpClientListener);
-        return null;
-    }
-
-    @Override
-    public String list() throws IOException {
-
-        UDPClientListener udpClientListener = new UDPClientListener(socket_udp,
-                userResponseStream,
-                "list",
-                null,
-                config);
+    private String processUDP(String command, ArrayList<String> args) {
+        UDPClientListener udpClientListener = new UDPClientListener(socket_udp, userResponseStream, command, args, config);
         activListener.add(udpClientListener);
         executor.execute(udpClientListener);
         return null;
     }
 
     @Override
-    public String msg(String username, String message) throws IOException {
+    public String login(String username, String password) throws IOException {
+        return processTCP("login", new ArrayList<>(Arrays.asList(username, password)));
+    }
 
-        TCPClientListener tcpClientListener = new TCPClientListener(socket_tcp,
-                userResponseStream,
-                "send",
-                new ArrayList<>(Arrays.asList(username, message)));
-        activListener.add(tcpClientListener);
-        executor.execute(tcpClientListener);
-        return null;
+    @Override
+    public String logout() throws IOException {
+        return processTCP("logout", null);
+    }
+
+    @Override
+    public String send(String message) throws IOException {
+        return processTCP("send", new ArrayList<>(Collections.singletonList(message)));
+    }
+
+    @Override
+    public String list() throws IOException {
+        return processUDP("list", null);
+    }
+
+    @Override
+    public String msg(String username, String message) throws IOException {
+        return processTCP("send", new ArrayList<>(Arrays.asList(username, message)));
     }
 
     @Override
     public String lookup(String username) throws IOException {
-
-        TCPClientListener tcpClientListener = new TCPClientListener(socket_tcp,
-                userResponseStream,
-                "send",
-                new ArrayList<>(Collections.singletonList(username)));
-        activListener.add(tcpClientListener);
-        executor.execute(tcpClientListener);
-        return null;
+        return processTCP("send", new ArrayList<>(Collections.singletonList(username)));
     }
 
     @Override
     public String register(String privateAddress) throws IOException {
-
-        TCPClientListener tcpClientListener = new TCPClientListener(socket_tcp,
-                userResponseStream,
-                "send",
-                new ArrayList<>(Collections.singletonList(privateAddress)));
-        activListener.add(tcpClientListener);
-        executor.execute(tcpClientListener);
-        return null;
+        return processTCP("send", new ArrayList<>(Collections.singletonList(privateAddress)));
     }
 
     @Override
     public String lastMsg() throws IOException {
-
-        TCPClientListener tcpClientListener = new TCPClientListener(socket_tcp,
-                userResponseStream,
-                "logout",
-                null);
-        executor.execute(tcpClientListener);
-        activListener.add(tcpClientListener);
-        return null;
+        return processTCP("logout", null);
     }
 
     @Override
