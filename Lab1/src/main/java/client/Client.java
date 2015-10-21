@@ -1,8 +1,12 @@
 package client;
 
+import channel.Channel;
+import channel.TCPChannel;
+import channel.UDPChannel;
+import cli.Command;
+import cli.Shell;
 import client.listener.ClientListener;
 import client.listener.TCPClientListener;
-import client.listener.UDPClientListener;
 import util.Config;
 
 import java.io.IOException;
@@ -10,10 +14,6 @@ import java.io.InputStream;
 import java.io.PrintStream;
 import java.net.DatagramSocket;
 import java.net.Socket;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Scanner;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.logging.Level;
@@ -23,6 +23,14 @@ public class Client implements IClientCli, Runnable {
     private static final Logger LOGGER = Logger.getLogger(Client.class.getName());
 
     private final ExecutorService executor;
+    private Channel channel_tcp;
+    private UDPChannel channel_udp;
+    private Shell shell;
+
+    private Socket socket_tcp;
+    private DatagramSocket socket_udp;
+
+    private TCPClientListener activListener;
 
     private boolean running = true;
 
@@ -30,13 +38,6 @@ public class Client implements IClientCli, Runnable {
     private Config config;
     private InputStream userRequestStream;
     private PrintStream userResponseStream;
-
-    private Socket socket_tcp;
-    private DatagramSocket socket_udp;
-
-    private TCPClientListener tcpClientListener_all;
-
-    private ArrayList<ClientListener> activListener;
 
     /**
      * @param componentName      the name of the component - represented in the prompt
@@ -52,18 +53,19 @@ public class Client implements IClientCli, Runnable {
         this.userResponseStream = userResponseStream;
 
         this.executor = Executors.newCachedThreadPool();
-        this.activListener = new ArrayList<>();
+
+        shell = new Shell(componentName, userRequestStream, userResponseStream);
+        shell.register(this);
 
         try {
             socket_tcp = new Socket(config.getString("chatserver.host"), config.getInt("chatserver.tcp.port"));
             socket_udp = new DatagramSocket();
 
+            this.activListener = new TCPClientListener(socket_tcp, userResponseStream);
+            executor.execute(activListener);
+            this.channel_tcp = new TCPChannel(socket_tcp);
+            this.channel_udp = new UDPChannel(socket_udp, config.getString("chatserver.host"), config.getInt("chatserver.udp.port"));
 
-            //tcpClientListener_all = new TCPClientListener(socket_tcp,
-            //        userResponseStream,
-            //        "all",
-            //        null);
-            //executor.execute(tcpClientListener_all);
         } catch (IOException e) {
             LOGGER.log(Level.SEVERE, "error openen sockets", e);
             userResponseStream.println("Error, server not reachable!");
@@ -76,136 +78,87 @@ public class Client implements IClientCli, Runnable {
 
         LOGGER.info("starting client " + componentName);
 
-        Scanner scanner = new Scanner(userRequestStream);
-
-        while (running) {
-            String input = scanner.nextLine();
-
-            try {
-                if (input.contains("!login")) {
-                    String[] input_data = input.split(" ");
-                    if (input_data.length == 3) {
-                        this.login(input_data[1], input_data[2]);
-                    } else {
-                        userResponseStream.println("need username & password!");
-                    }
-                } else if (input.contains("!logout")) {
-                    this.logout();
-                } else if (input.contains("!send")) {
-                    String[] input_data = input.split(" ");
-                    if (input_data.length == 2) {
-                        this.send(input_data[1]);
-                    } else {
-                        userResponseStream.println("need message!");
-                    }
-                } else if (input.contains("!register")) {
-                    String[] input_data = input.split(" ");
-                    if (input_data.length == 2) {
-                        this.register(input_data[1]);
-                    } else {
-                        userResponseStream.println("need IP:Port!");
-                    }
-                } else if (input.contains("!lookup")) {
-                    String[] input_data = input.split(" ");
-                    if (input_data.length == 2) {
-                        this.lookup(input_data[1]);
-                    } else {
-                        userResponseStream.println("need username!");
-                    }
-                } else if (input.contains("!msg")) {
-                    String[] input_data = input.split(" ");
-                    if (input_data.length == 3) {
-                        this.msg(input_data[1], input_data[2]);
-                    } else {
-                        userResponseStream.println("need receiver & message!");
-                    }
-                } else if (input.contains("!list")) {
-                    this.list();
-                } else if (input.contains("!lastMsg")) {
-                    this.lastMsg();
-                } else if (input.contains("!exit")) {
-                    this.exit();
-                } else {
-                    userResponseStream.println("unknown command");
-                }
-            } catch (IOException e) {
-                LOGGER.log(Level.SEVERE, "error processing user input", e);
-            }
-        }
-    }
-
-    private String processTCP(String command, ArrayList<String> args) {
-        TCPClientListener tcpClientListener = new TCPClientListener(socket_tcp, userResponseStream, command, args);
-        activListener.add(tcpClientListener);
-        executor.execute(tcpClientListener);
-        return null;
-    }
-
-    private String processUDP(String command, ArrayList<String> args) {
-        UDPClientListener udpClientListener = new UDPClientListener(socket_udp, userResponseStream, command, args, config);
-        activListener.add(udpClientListener);
-        executor.execute(udpClientListener);
-        return null;
+        new Thread(shell).start();
+        System.out.println(getClass().getName() + " up and waiting for commands!");
     }
 
     @Override
+    @Command
     public String login(String username, String password) throws IOException {
-        return processTCP("login", new ArrayList<>(Arrays.asList(username, password)));
+        channel_tcp.send("login " + username + " " + password);
+        return null;
     }
 
     @Override
+    @Command
     public String logout() throws IOException {
-        return processTCP("logout", null);
+        channel_tcp.send("logout");
+        return null;
     }
 
     @Override
+    @Command
     public String send(String message) throws IOException {
-        return processTCP("send", new ArrayList<>(Collections.singletonList(message)));
+        channel_tcp.send("send " + message);
+        return null;
     }
 
     @Override
+    @Command
     public String list() throws IOException {
-        return processUDP("list", null);
+        channel_udp.send("list");
+        return null;
     }
 
     @Override
+    @Command
     public String msg(String username, String message) throws IOException {
-        return processTCP("send", new ArrayList<>(Arrays.asList(username, message)));
+        channel_tcp.send("msg " + username + " " + message);
+        return null;
     }
 
     @Override
+    @Command
     public String lookup(String username) throws IOException {
-        return processTCP("send", new ArrayList<>(Collections.singletonList(username)));
+        channel_tcp.send("lookup " + username);
+        return null;
     }
 
     @Override
+    @Command
     public String register(String privateAddress) throws IOException {
-        return processTCP("send", new ArrayList<>(Collections.singletonList(privateAddress)));
+        channel_tcp.send("register " + privateAddress);
+        return null;
     }
 
     @Override
+    @Command
     public String lastMsg() throws IOException {
-        return processTCP("logout", null);
+        channel_tcp.send("lastMsg");
+        return null;
     }
 
     @Override
+    @Command
     public String exit() {
         LOGGER.info("shutting down client");
         running = false;
 
-        String message = "";
-        executor.shutdown();
-
         try {
+            channel_tcp.send("quit");
+
+            activListener.terminate();
+            channel_udp.terminate();
+            channel_tcp.terminate();
             socket_tcp.close();
             socket_udp.close();
+            shell.close();
+            executor.shutdown();
         } catch (IOException e) {
             e.printStackTrace();
         }
-        for (ClientListener listener : activListener) {
-            listener.terminate();
-        }
-        return message;
+
+        return "shutdown complete";
     }
 
     /**

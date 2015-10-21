@@ -10,30 +10,44 @@ import java.net.Socket;
  * Created by Lukas on 19.10.2015.
  */
 public class TCPChannel implements Channel {
-
-    private Socket socket;
+    private final Socket socket;
+    private PrintWriter serverWriter;
+    private BufferedReader reader;
 
     public TCPChannel(Socket socket) {
-
         this.socket = socket;
     }
 
+
     @Override
     public void send(String data) throws IOException {
-        PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
-        out.println(data);
+        try {
+            serverWriter = new PrintWriter(socket.getOutputStream(), true);
+            serverWriter.println(data);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     @Override
     public String receive() throws IOException {
-        BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-        return in.readLine();
+        try {
+            reader = new BufferedReader(
+                    new InputStreamReader(socket.getInputStream()));
+            String data = reader.readLine();
+            return data;
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return null;
     }
 
     @Override
     public String terminate() throws IOException {
-        System.out.println("closing tcp channel");
-        //socket.close();
+        System.out.println("shutdown tcp channel");
+        //serverWriter.close();
+        //reader.close();
         return null;
     }
 }

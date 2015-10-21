@@ -8,7 +8,6 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.net.SocketException;
 
 /**
  * Created by Lukas on 16.10.2015.
@@ -49,6 +48,9 @@ public class TCPWorker implements Worker {
 
             while (running) {
                 String input = channel.receive();
+
+                if (input == null || input.equals("quit")) this.terminate();
+
                 if (running) {
                     System.out.println("[" + clienthost + ":" + clientport + "]" + input);
                     String response = operationFactory.process(input);

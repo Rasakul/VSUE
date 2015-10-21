@@ -55,6 +55,7 @@ public class TCPListener implements Serverlistener {
         running = false;
         try {
             server_socket.close();
+
             message += "TCP successfully stopped \n";
         } catch (IOException e) {
             message += "Error closing TCP: \n" + e.getMessage();
