@@ -34,6 +34,7 @@ public class Chatserver implements IChatserverCli, Runnable {
     private HashMap<String, String> passwords;
 
     private Hashtable<Integer, Worker> openConnections;
+    private Hashtable<Integer, String> userConnections_tcp;
 
     /**
      * @param componentName      the name of the component - represented in the prompt
@@ -58,6 +59,7 @@ public class Chatserver implements IChatserverCli, Runnable {
         }
 
         openConnections = new Hashtable<>();
+        userConnections_tcp = new Hashtable<>();
         executor = Executors.newCachedThreadPool();
     }
 
@@ -106,11 +108,11 @@ public class Chatserver implements IChatserverCli, Runnable {
         running = false;
         String message = "Shutting down " + componentName + "\n";
 
-            for (Worker worker : this.getOpenConnections().values()) {
-                if (worker.isRunning()) {
-                    worker.terminate();
-                }
+        for (Worker worker : this.getOpenConnections().values()) {
+            if (worker.isRunning()) {
+                worker.terminate();
             }
+        }
 
         message += TCPListener.terminate();
         message += UDPListener.terminate();
@@ -140,5 +142,9 @@ public class Chatserver implements IChatserverCli, Runnable {
 
     public synchronized Hashtable<Integer, Worker> getOpenConnections() {
         return openConnections;
+    }
+
+    public synchronized Hashtable<Integer, String> getUserConnections_tcp() {
+        return userConnections_tcp;
     }
 }

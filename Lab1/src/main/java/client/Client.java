@@ -5,7 +5,6 @@ import channel.TCPChannel;
 import channel.UDPChannel;
 import cli.Command;
 import cli.Shell;
-import client.listener.ClientListener;
 import client.listener.TCPClientListener;
 import util.Config;
 
@@ -24,17 +23,20 @@ public class Client implements IClientCli, Runnable {
 
     private final ExecutorService executor;
     private Channel channel_tcp;
-    private UDPChannel channel_udp;
+    private Channel channel_udp;
     private Shell shell;
+    private TCPClientListener activListener;
 
     private Socket socket_tcp;
     private DatagramSocket socket_udp;
 
-    private TCPClientListener activListener;
+    private final String componentName;
+    private final String host;
+    private final Integer port_tcp;
+    private final Integer port_udp;
+    private String username = "";
+    private boolean loggedIn;
 
-    private boolean running = true;
-
-    private String componentName;
     private Config config;
     private InputStream userRequestStream;
     private PrintStream userResponseStream;
@@ -54,52 +56,58 @@ public class Client implements IClientCli, Runnable {
 
         this.executor = Executors.newCachedThreadPool();
 
+        this.host = config.getString("chatserver.host");
+        this.port_udp = config.getInt("chatserver.udp.port");
+        this.port_tcp = config.getInt("chatserver.tcp.port");
+
         shell = new Shell(componentName, userRequestStream, userResponseStream);
         shell.register(this);
+    }
+
+    @Override
+    public void run() {
+        LOGGER.info("starting client " + componentName);
 
         try {
-            socket_tcp = new Socket(config.getString("chatserver.host"), config.getInt("chatserver.tcp.port"));
+            socket_tcp = new Socket(host, port_tcp);
             socket_udp = new DatagramSocket();
 
             this.activListener = new TCPClientListener(socket_tcp, userResponseStream);
-            executor.execute(activListener);
             this.channel_tcp = new TCPChannel(socket_tcp);
-            this.channel_udp = new UDPChannel(socket_udp, config.getString("chatserver.host"), config.getInt("chatserver.udp.port"));
+            this.channel_udp = new UDPChannel(socket_udp, host, port_udp);
+
+            executor.execute(shell);
+            executor.execute(activListener);
 
         } catch (IOException e) {
             LOGGER.log(Level.SEVERE, "error openen sockets", e);
             userResponseStream.println("Error, server not reachable!");
             this.exit();
         }
-    }
-
-    @Override
-    public void run() {
-
-        LOGGER.info("starting client " + componentName);
-
-        new Thread(shell).start();
         System.out.println(getClass().getName() + " up and waiting for commands!");
     }
 
     @Override
     @Command
     public String login(String username, String password) throws IOException {
-        channel_tcp.send("login " + username + " " + password);
+        this.username = username;
+        this.loggedIn = true;
+        channel_tcp.send("login;" + username + ";" + password);
         return null;
     }
 
     @Override
     @Command
     public String logout() throws IOException {
-        channel_tcp.send("logout");
+        loggedIn = false;
+        channel_tcp.send("logout;" + username);
         return null;
     }
 
     @Override
     @Command
     public String send(String message) throws IOException {
-        channel_tcp.send("send " + message);
+        channel_tcp.send("send;" + message);
         return null;
     }
 
@@ -107,27 +115,27 @@ public class Client implements IClientCli, Runnable {
     @Command
     public String list() throws IOException {
         channel_udp.send("list");
-        return null;
+        return channel_udp.receive();
     }
 
     @Override
     @Command
     public String msg(String username, String message) throws IOException {
-        channel_tcp.send("msg " + username + " " + message);
+        channel_tcp.send("msg;" + username + ";" + message);
         return null;
     }
 
     @Override
     @Command
     public String lookup(String username) throws IOException {
-        channel_tcp.send("lookup " + username);
+        channel_tcp.send("lookup;" + username);
         return null;
     }
 
     @Override
     @Command
     public String register(String privateAddress) throws IOException {
-        channel_tcp.send("register " + privateAddress);
+        channel_tcp.send("register;" + privateAddress);
         return null;
     }
 
@@ -142,9 +150,8 @@ public class Client implements IClientCli, Runnable {
     @Command
     public String exit() {
         LOGGER.info("shutting down client");
-        running = false;
-
         try {
+            if (loggedIn) this.logout();
             channel_tcp.send("quit");
 
             activListener.terminate();

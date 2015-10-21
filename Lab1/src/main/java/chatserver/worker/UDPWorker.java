@@ -38,7 +38,7 @@ public class UDPWorker implements Worker {
         try {
 
             byte[] response = (command.equals("list") ? this.getOnlineUsers() : "unknown command").getBytes();
-
+            System.out.println("sending " + new String(response));
             DatagramPacket packet_out = new DatagramPacket(response,
                     response.length,
                     packet_in.getAddress(),

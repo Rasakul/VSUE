@@ -53,7 +53,8 @@ public class TCPWorker implements Worker {
 
                 if (running) {
                     System.out.println("[" + clienthost + ":" + clientport + "]" + input);
-                    String response = operationFactory.process(input);
+                    String response = operationFactory.process(ID, input);
+                    System.out.println("sending: " + response);
                     channel.send(response);
                 }
             }
@@ -85,5 +86,9 @@ public class TCPWorker implements Worker {
     @Override
     public boolean isRunning() {
         return running;
+    }
+
+    public TCPChannel getChannel() {
+        return channel;
     }
 }

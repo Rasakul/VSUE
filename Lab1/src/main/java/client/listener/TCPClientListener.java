@@ -19,7 +19,7 @@ public class TCPClientListener implements ClientListener {
     private final PrintStream userResponseStream;
     private final TCPChannel channel;
 
-    private volatile boolean running;
+    private volatile boolean running = true;
 
     public TCPClientListener(Socket socket, PrintStream userResponseStream) {
         this.socket = socket;
@@ -30,13 +30,16 @@ public class TCPClientListener implements ClientListener {
 
     @Override
     public void run() {
+        System.out.println("listening on TCP");
         try {
             while (running){
-                userResponseStream.println(channel.receive());
+                String response = channel.receive();
+                if(response != null) userResponseStream.println(response);
             }
         } catch (IOException e) {
             LOGGER.log(Level.SEVERE, "error communicate with tcp socket", e);
             userResponseStream.println("Error, server not reachable!");
+            running = false;
         }
     }
 

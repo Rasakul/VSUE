@@ -21,26 +21,14 @@ public class TCPChannel implements Channel {
 
     @Override
     public void send(String data) throws IOException {
-        try {
-            serverWriter = new PrintWriter(socket.getOutputStream(), true);
-            serverWriter.println(data);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        serverWriter = new PrintWriter(socket.getOutputStream(), true);
+        serverWriter.println(data);
     }
 
     @Override
     public String receive() throws IOException {
-        try {
-            reader = new BufferedReader(
-                    new InputStreamReader(socket.getInputStream()));
-            String data = reader.readLine();
-            return data;
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        return null;
+        reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+        return reader.readLine();
     }
 
     @Override

@@ -15,18 +15,17 @@ public class OperationFactory {
         this.chatserver = chatserver;
 
         operationMap = new HashMap<>();
-        operationMap.put("login", new LoginOperation(this));
+        operationMap.put("login", new LoginOperation(chatserver));
+        operationMap.put("logout", new LogoutOperation(chatserver));
+        operationMap.put("send", new PublicMessageOperation(chatserver));
     }
 
-    public String process(String operation) {
+    public String process(Integer workerID, String command) {
         String response = "";
-        if (operation != null && !operation.equals("")) {
-            response = operationMap.get(operation.split(" ")[0]).process(operation);
+        if (command != null && !command.equals("")) {
+            Operation operation = operationMap.get(command.split(";")[0]);
+            if (operation != null) response = operation.process(workerID, command);
         }
         return response;
-    }
-
-    public Chatserver getChatserver() {
-        return chatserver;
     }
 }

@@ -10,20 +10,19 @@ import java.util.Objects;
  */
 public class LoginOperation implements Operation {
 
-    private final OperationFactory operationFactory;
+    private final Chatserver chatserver;
 
-    public LoginOperation(OperationFactory operationFactory) {
+    public LoginOperation(Chatserver chatserver) {
 
-        this.operationFactory = operationFactory;
+        this.chatserver = chatserver;
     }
 
     @Override
-    public String process(String line) {
+    public String process(Integer workerID, String line) {
 
-        String[] split = line.split(" ");
+        String[] split = line.split(";");
 
         if (split.length == 3) {
-            Chatserver chatserver = operationFactory.getChatserver();
             String username = split[1];
             String passoword = split[2];
 
@@ -34,6 +33,9 @@ public class LoginOperation implements Operation {
                 synchronized (chatserver.getUsersStatus()) {
                     if(!chatserver.getUsersStatus().get(username)){
                         chatserver.getUsersStatus().put(username, true);
+                        synchronized (chatserver.getUserConnections_tcp()){
+                            chatserver.getUserConnections_tcp().put(workerID,username);
+                        }
                     } else {
                         return ("Error, already logged in");
                     }
