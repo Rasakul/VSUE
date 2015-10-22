@@ -4,44 +4,48 @@ import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
+import java.util.logging.Logger;
 
 /**
  * Created by Lukas on 19.10.2015.
  */
 public class UDPChannel implements Channel {
-    private final DatagramSocket socket;
-    private final String host;
-    private final Integer port;
+	private static final Logger LOGGER = Logger.getLogger(UDPChannel.class.getName());
 
-    public UDPChannel(DatagramSocket socket, String host, Integer port) {
-        this.host = host;
-        this.port = port;
+	private final DatagramSocket socket;
+	private final String         host;
+	private final Integer        port;
 
-        this.socket = socket;
-    }
+	public UDPChannel(DatagramSocket socket, String host, Integer port) {
+		this.host = host;
+		this.port = port;
 
-    @Override
-    public void send(String data) throws IOException {
-        byte[] data_byte = data.getBytes();
+		this.socket = socket;
+	}
 
-        DatagramPacket packet_out = new DatagramPacket(data_byte,
-                data_byte.length,
-                InetAddress.getByName(host),
-                port);
-        socket.send(packet_out);
-    }
+	@Override
+	public void send(String data) throws IOException {
+		LOGGER.fine("sending: " + data);
 
-    @Override
-    public String receive() throws IOException {
+		byte[] data_byte = data.getBytes();
 
-        DatagramPacket packet_in = new DatagramPacket(new byte[1024], 1024);
-        socket.receive(packet_in);
-        return new String(packet_in.getData());
-    }
+		DatagramPacket packet_out = new DatagramPacket(data_byte, data_byte.length, InetAddress.getByName(host), port);
+		socket.send(packet_out);
+	}
 
-    @Override
-    public String terminate() {
+	@Override
+	public String receive() throws IOException {
 
-        return null;
-    }
+		DatagramPacket packet_in = new DatagramPacket(new byte[1024], 1024);
+		socket.receive(packet_in);
+		String response = new String(packet_in.getData());
+		LOGGER.fine("receiving: " + response);
+		return response;
+	}
+
+	@Override
+	public void terminate() {
+		//nothing to do
+		LOGGER.info("Shutdown UDP channel");
+	}
 }

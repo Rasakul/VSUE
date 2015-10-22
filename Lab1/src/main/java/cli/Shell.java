@@ -19,8 +19,8 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class Shell implements Runnable, Closeable {
 	private static final PrintStream stdout = System.out;
-	private static final InputStream stdin = System.in;
-	private static final char[] EMPTY = new char[0];
+	private static final InputStream stdin  = System.in;
+	private static final char[]      EMPTY  = new char[0];
 
 	private static final ThreadLocal<DateFormat> DATE_FORMAT = new ThreadLocal<DateFormat>() {
 		@Override
@@ -31,23 +31,20 @@ public class Shell implements Runnable, Closeable {
 
 	private String name;
 
-	private ShellCommandInvocationHandler invocationHandler = new ShellCommandInvocationHandler();
-	private Map<String, ShellCommandDefinition> commandMap = new ConcurrentHashMap<>();
-	private ConversionService conversionService = new DefaultConversionService();
+	private ShellCommandInvocationHandler       invocationHandler = new ShellCommandInvocationHandler();
+	private Map<String, ShellCommandDefinition> commandMap        = new ConcurrentHashMap<>();
+	private ConversionService                   conversionService = new DefaultConversionService();
 
-	private OutputStream out;
+	private OutputStream   out;
 	private BufferedReader in;
-	private Closeable readMonitor;
+	private Closeable      readMonitor;
 
 	/**
 	 * Creates a new {@code Shell} instance.
 	 *
-	 * @param name
-	 *            the name of the {@code Shell} displayed in the prompt
-	 * @param in
-	 *            the {@code InputStream} to read messages from
-	 * @param out
-	 *            the {@code OutputStream} to write messages to
+	 * @param name the name of the {@code Shell} displayed in the prompt
+	 * @param in   the {@code InputStream} to read messages from
+	 * @param out  the {@code OutputStream} to write messages to
 	 */
 	public Shell(String name, InputStream in, OutputStream out) {
 		this.name = name;
@@ -71,11 +68,8 @@ public class Shell implements Runnable, Closeable {
 	@Override
 	public void run() {
 		try {
-			for (String line; !Thread.currentThread().isInterrupted()
-					&& (line = readLine()) != null;) {
-				write(String.format("%s\t\t%s> %s%n",
-						DATE_FORMAT.get().format(new Date()), name, line)
-						.getBytes());
+			for (String line; !Thread.currentThread().isInterrupted() && (line = readLine()) != null; ) {
+				write(String.format("%s\t\t%s> %s%n", DATE_FORMAT.get().format(new Date()), name, line).getBytes());
 				Object result;
 				try {
 					result = invoke(line);
@@ -92,8 +86,7 @@ public class Shell implements Runnable, Closeable {
 			try {
 				writeLine("Shell closed");
 			} catch (IOException ex) {
-				System.out.println(ex.getClass().getName() + ": "
-						+ ex.getMessage());
+				System.out.println(ex.getClass().getName() + ": " + ex.getMessage());
 			}
 		}
 	}
@@ -115,10 +108,9 @@ public class Shell implements Runnable, Closeable {
 	/**
 	 * Writes the given line to the provided {@link OutputStream}.<br/>
 	 *
-	 * @param line
-	 *            the line to write
-	 * @throws IOException
-	 *             if an I/O error occurs
+	 * @param line the line to write
+	 *
+	 * @throws IOException if an I/O error occurs
 	 */
 	public void writeLine(String line) throws IOException {
 		String now = DATE_FORMAT.get().format(new Date());
@@ -128,8 +120,7 @@ public class Shell implements Runnable, Closeable {
 				write((String.format("%s\t\t%s\n", now, l)).getBytes());
 			}
 		} else {
-			write((String.format("%s\t\t%s: %s%s", now, name, line,
-					line.endsWith("\n") ? "" : "\n")).getBytes());
+			write((String.format("%s\t\t%s: %s%s", now, name, line, line.endsWith("\n") ? "" : "\n")).getBytes());
 		}
 	}
 
@@ -137,10 +128,9 @@ public class Shell implements Runnable, Closeable {
 	 * Writes {@code b.length} bytes from the specified byte array to the
 	 * provided {@link OutputStream}.
 	 *
-	 * @param bytes
-	 *            the data
-	 * @throws IOException
-	 *             if an I/O error occurs.
+	 * @param bytes the data
+	 *
+	 * @throws IOException if an I/O error occurs.
 	 */
 	public void write(byte[] bytes) throws IOException {
 		out.write(bytes);
@@ -153,10 +143,10 @@ public class Shell implements Runnable, Closeable {
 	 * followed immediately by a linefeed.
 	 *
 	 * @return A String containing the contents of the line, not including any
-	 *         line-termination characters, or {@code null} if the end of the
-	 *         stream has been reached
-	 * @throws IOException
-	 *             if an I/O error occurs
+	 * line-termination characters, or {@code null} if the end of the
+	 * stream has been reached
+	 *
+	 * @throws IOException if an I/O error occurs
 	 */
 	public String readLine() throws IOException {
 		synchronized (readMonitor) {
@@ -174,11 +164,11 @@ public class Shell implements Runnable, Closeable {
 	 * If {@code len} is less than {@code 0}, the default buffer size (
 	 * {@code 4096}) is used.
 	 *
-	 * @param len
-	 *            maximum number of characters to read
+	 * @param len maximum number of characters to read
+	 *
 	 * @return the destination buffer containing the bytes read
-	 * @throws IOException
-	 *             if an I/O error occurs
+	 *
+	 * @throws IOException if an I/O error occurs
 	 */
 	public char[] read(int len) throws IOException {
 		synchronized (readMonitor) {
@@ -195,8 +185,8 @@ public class Shell implements Runnable, Closeable {
 	 * default buffer size.
 	 *
 	 * @return the destination buffer containing the bytes read
-	 * @throws IOException
-	 *             if an I/O error occurs
+	 *
+	 * @throws IOException if an I/O error occurs
 	 * @see #read(int)
 	 */
 	public char[] read() throws IOException {
@@ -215,16 +205,14 @@ public class Shell implements Runnable, Closeable {
 			try {
 				readMonitor.close();
 			} catch (IOException e) {
-				System.err.printf("Cannot close console input. %s: %s%n",
-						getClass(), e.getMessage());
+				System.err.printf("Cannot close console input. %s: %s%n", getClass(), e.getMessage());
 			}
 		}
 		if (out != stdout) {
 			try {
 				out.close();
 			} catch (IOException e) {
-				System.err.printf("Cannot close console output. %s: %s%n",
-						getClass(), e.getMessage());
+				System.err.printf("Cannot close console output. %s: %s%n", getClass(), e.getMessage());
 			}
 		}
 	}
@@ -237,20 +225,18 @@ public class Shell implements Runnable, Closeable {
 	 * If a command with the same name is already registered, an
 	 * {@link IllegalArgumentException} is thrown.
 	 *
-	 * @param obj
-	 *            the object implementing commands to be registered
+	 * @param obj the object implementing commands to be registered
+	 *
 	 * @see cli.Shell.ShellCommandDefinition
 	 */
 	public void register(Object obj) {
 		for (Method method : obj.getClass().getMethods()) {
 			Command command = method.getAnnotation(Command.class);
 			if (command != null) {
-				String name = command.value().isEmpty() ? method.getName()
-						: command.value();
+				String name = command.value().isEmpty() ? method.getName() : command.value();
 				name = name.startsWith("!") ? name : "!" + name;
 				if (commandMap.containsKey(name)) {
-					throw new IllegalArgumentException(String.format(
-							"Command '%s' is already registered.", name));
+					throw new IllegalArgumentException(String.format("Command '%s' is already registered.", name));
 				}
 				method.setAccessible(true);
 				commandMap.put(name, new ShellCommandDefinition(obj, method));
@@ -262,11 +248,11 @@ public class Shell implements Runnable, Closeable {
 	 * Parses the given command string, extracts the arguments and invokes the
 	 * command matching the input.
 	 *
-	 * @param cmd
-	 *            the command string
+	 * @param cmd the command string
+	 *
 	 * @return the result of the executed command
-	 * @throws Throwable
-	 *             any exception that might occur during invocation
+	 *
+	 * @throws Throwable any exception that might occur during invocation
 	 */
 	public Object invoke(String cmd) throws Throwable {
 		if (cmd == null || (cmd = cmd.trim()).isEmpty()) {
@@ -277,19 +263,15 @@ public class Shell implements Runnable, Closeable {
 		String cmdName = pos >= 0 ? cmd.substring(0, pos) : cmd;
 		ShellCommandDefinition cmdDef = commandMap.get(cmdName);
 		if (cmdDef == null) {
-			throw new IllegalArgumentException(String.format(
-					"Command '%s' not registered.", cmdName));
+			throw new IllegalArgumentException(String.format("Command '%s' not registered.", cmdName));
 		}
 
-		String[] parts = cmd.split("\\s+",
-				cmdDef.targetMethod.getParameterTypes().length + 1);
+		String[] parts = cmd.split("\\s+", cmdDef.targetMethod.getParameterTypes().length + 1);
 		Object[] args = new Object[parts.length - 1];
 		for (int i = 1; i < parts.length; i++) {
-			args[i - 1] = conversionService.convert(parts[i],
-					cmdDef.targetMethod.getParameterTypes()[i - 1]);
+			args[i - 1] = conversionService.convert(parts[i], cmdDef.targetMethod.getParameterTypes()[i - 1]);
 		}
-		return invocationHandler.invoke(cmdDef.targetObject,
-				cmdDef.targetMethod, args);
+		return invocationHandler.invoke(cmdDef.targetObject, cmdDef.targetMethod, args);
 	}
 
 	/**
@@ -354,8 +336,7 @@ public class Shell implements Runnable, Closeable {
 	 */
 	static class ShellCommandInvocationHandler implements InvocationHandler {
 		@Override
-		public Object invoke(Object target, Method method, Object... args)
-				throws Throwable {
+		public Object invoke(Object target, Method method, Object... args) throws Throwable {
 			return method.invoke(target, args);
 		}
 	}

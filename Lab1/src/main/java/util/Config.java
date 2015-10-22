@@ -17,8 +17,7 @@ public final class Config {
 	 * Creates an instance of Config which reads configuration data form
 	 * {@code .properties} file with given name found in classpath.
 	 *
-	 * @param name
-	 *            the name of the .properties file
+	 * @param name the name of the .properties file
 	 */
 	public Config(final String name) {
 		this.bundle = ResourceBundle.getBundle(name);
@@ -27,9 +26,10 @@ public final class Config {
 	/**
 	 * Returns the value as String for the given key.
 	 *
-	 * @param key
-	 *            the property's key
+	 * @param key the property's key
+	 *
 	 * @return String value of the property
+	 *
 	 * @see ResourceBundle#getString(String)
 	 */
 	public String getString(String key) {
@@ -42,11 +42,11 @@ public final class Config {
 	/**
 	 * Returns the value as {@code int} for the given key.
 	 *
-	 * @param key
-	 *            the property's key
+	 * @param key the property's key
+	 *
 	 * @return int value of the property
-	 * @throws NumberFormatException
-	 *             if the String cannot be parsed to an Integer
+	 *
+	 * @throws NumberFormatException if the String cannot be parsed to an Integer
 	 */
 	public int getInt(String key) {
 		return Integer.parseInt(getString(key));
@@ -55,10 +55,8 @@ public final class Config {
 	/**
 	 * Sets the value for the given key.
 	 *
-	 * @param key
-	 *            the property's key
-	 * @param value
-	 *            the value of the property
+	 * @param key   the property's key
+	 * @param value the value of the property
 	 */
 	public void setProperty(String key, Object value) {
 		properties.put(key, value);

@@ -5,9 +5,9 @@ package channel.util;
  */
 public class TCPDataPacket extends DataPacket {
 
-    public TCPDataPacket(String address, Integer port) {
+	public TCPDataPacket(String address, Integer port) {
 
-        this.address = address;
-        this.port = port;
-    }
+		this.address = address;
+		this.port = port;
+	}
 }

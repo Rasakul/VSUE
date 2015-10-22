@@ -5,37 +5,39 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
+import java.util.logging.Logger;
 
 /**
  * Created by Lukas on 19.10.2015.
  */
 public class TCPChannel implements Channel {
-    private final Socket socket;
-    private PrintWriter serverWriter;
-    private BufferedReader reader;
+	private static final Logger LOGGER = Logger.getLogger(TCPChannel.class.getName());
 
-    public TCPChannel(Socket socket) {
-        this.socket = socket;
-    }
+	private final Socket socket;
+
+	public TCPChannel(Socket socket) {
+		this.socket = socket;
+	}
 
 
-    @Override
-    public void send(String data) throws IOException {
-        serverWriter = new PrintWriter(socket.getOutputStream(), true);
-        serverWriter.println(data);
-    }
+	@Override
+	public void send(String data) throws IOException {
+		LOGGER.fine("sending: " + data);
+		PrintWriter serverWriter = new PrintWriter(socket.getOutputStream(), true);
+		serverWriter.println(data);
+	}
 
-    @Override
-    public String receive() throws IOException {
-        reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-        return reader.readLine();
-    }
+	@Override
+	public String receive() throws IOException {
+		BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+		String response = reader.readLine();
+		LOGGER.fine("receiving: " + response);
+		return response;
+	}
 
-    @Override
-    public String terminate() throws IOException {
-        System.out.println("shutdown tcp channel");
-        //serverWriter.close();
-        //reader.close();
-        return null;
-    }
+	@Override
+	public void terminate() throws IOException {
+		//nothing to do
+		LOGGER.info("Shutdown TCP channel");
+	}
 }

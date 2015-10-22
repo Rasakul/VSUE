@@ -2,93 +2,96 @@ package chatserver.worker;
 
 import channel.TCPChannel;
 import chatserver.Chatserver;
-import chatserver.operations.OperationFactory;
+import chatserver.util.OperationFactory;
 
 import java.io.IOException;
 import java.io.PrintStream;
-import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Created by Lukas on 16.10.2015.
  */
 public class TCPWorker implements Worker {
-    private final int ID;
+	private static final Logger LOGGER = Logger.getLogger(TCPWorker.class.getName());
 
-    private final Chatserver chatserver;
-    private final ServerSocket serverSocket;
-    private final Socket clientSocket;
-    private final PrintStream userResponseStream;
-    private final OperationFactory operationFactory;
-    private final TCPChannel channel;
+	private final int ID;
 
-    private volatile boolean running = true;
-    private String clienthost;
-    private Integer clientport;
+	private final Chatserver       chatserver;
+	private final Socket           clientSocket;
+	private final PrintStream      userResponseStream;
+	private final OperationFactory operationFactory;
+	private final TCPChannel       channel;
 
-    public TCPWorker(int ID, Chatserver chatserver, ServerSocket serverSocket, Socket clientSocket, PrintStream userResponseStream) {
-        this.ID = ID;
-        this.chatserver = chatserver;
-        this.serverSocket = serverSocket;
-        this.clientSocket = clientSocket;
-        this.userResponseStream = userResponseStream;
+	private volatile boolean running = true;
+	private String  clienthost;
+	private Integer clientport;
 
-        this.operationFactory = new OperationFactory(chatserver);
+	public TCPWorker(int ID, Chatserver chatserver, Socket clientSocket, PrintStream userResponseStream) {
+		this.ID = ID;
+		this.chatserver = chatserver;
+		this.clientSocket = clientSocket;
+		this.userResponseStream = userResponseStream;
 
-        this.channel = new TCPChannel(clientSocket);
-    }
+		this.operationFactory = new OperationFactory(chatserver);
 
-    @Override
-    public void run() {
-        try {
-            clienthost = clientSocket.getInetAddress().toString();
-            clientport = clientSocket.getPort();
+		this.channel = new TCPChannel(clientSocket);
+	}
 
-            System.out.println("new clientsocket: " + clienthost + ":" + clientport);
+	@Override
+	public void run() {
+		try {
 
-            while (running) {
-                String input = channel.receive();
+			clienthost = clientSocket.getInetAddress().toString();
+			clientport = clientSocket.getPort();
 
-                if (input == null || input.equals("quit")) this.terminate();
+			LOGGER.info("New TCP Worker with ID " + ID + "with client " + clienthost + ":" + clientport);
 
-                if (running) {
-                    System.out.println("[" + clienthost + ":" + clientport + "]" + input);
-                    String response = operationFactory.process(ID, input);
-                    System.out.println("sending: " + response);
-                    channel.send(response);
-                }
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        } finally {
-            try {
-                clientSocket.close();
-                running = false;
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-        running = false;
-    }
+			while (running) {
+				String input = channel.receive();
 
-    @Override
-    public void terminate() {
-        try {
-            System.out.println("closing tcp worker");
-            running = false;
-            channel.terminate();
-            clientSocket.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
+				if (input == null || input.equals("quit")) this.terminate();
 
-    @Override
-    public boolean isRunning() {
-        return running;
-    }
+				if (running) {
+					LOGGER.fine("Worker " + ID + ": " + input);
+					String response = operationFactory.process(ID, input);
+					channel.send(response);
+				}
+			}
+		} catch (IOException e) {
+			if (running) LOGGER.log(Level.SEVERE, "Error on TCP Socket", e);
+		} finally {
+			try {
+				LOGGER.info("Stopping TCP Worker " + ID);
+				clientSocket.close();
+				running = false;
+			} catch (IOException e) {
+				LOGGER.log(Level.SEVERE, "Error closing TCP Socket", e);
+			}
+		}
+		running = false;
+	}
 
-    public TCPChannel getChannel() {
-        return channel;
-    }
+	@Override
+	public void terminate() {
+		try {
+			LOGGER.info("Stopping TCP Worker " + ID);
+			running = false;
+			channel.terminate();
+			clientSocket.close();
+			chatserver.getOpenConnections().remove(ID);
+		} catch (IOException e) {
+			LOGGER.log(Level.SEVERE, "Error closing TCP Socket", e);
+		}
+	}
+
+	@Override
+	public boolean isRunning() {
+		return running;
+	}
+
+	public TCPChannel getChannel() {
+		return channel;
+	}
 }

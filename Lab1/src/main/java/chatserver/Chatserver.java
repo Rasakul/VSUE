@@ -3,148 +3,137 @@ package chatserver;
 import chatserver.listener.Serverlistener;
 import chatserver.listener.TCPListener;
 import chatserver.listener.UDPListener;
+import chatserver.util.Usermodul;
 import chatserver.worker.Worker;
+import cli.Command;
+import cli.Shell;
 import util.Config;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
-import java.util.HashMap;
 import java.util.Hashtable;
-import java.util.Scanner;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.logging.Level;
+import java.util.logging.LogManager;
+import java.util.logging.Logger;
 
 public class Chatserver implements IChatserverCli, Runnable {
+	private static final Logger LOGGER = Logger.getLogger(Chatserver.class.getName());
 
-    public static int OPENCON_COUNTER = 0;
+	public static int WORKER_COUNTER = 0;
 
-    private String componentName;
-    private Config server_config;
-    private InputStream userRequestStream;
-    private PrintStream userResponseStream;
-    private Serverlistener TCPListener;
-    private Serverlistener UDPListener;
+	private String         componentName;
+	private Config         server_config;
+	private InputStream    userRequestStream;
+	private PrintStream    userResponseStream;
+	private Serverlistener TCPListener;
+	private Serverlistener UDPListener;
+	private Shell          shell;
+	private Usermodul      usermodul;
 
-    private ExecutorService executor;
+	private ExecutorService executor;
 
-    private boolean running = true;
+	private boolean running = true;
 
-    private Hashtable<String, Boolean> usersStatus;
-    private HashMap<String, String> passwords;
+	private Hashtable<Integer, Worker> openConnections;
+	private String                     lastMsg;
 
-    private Hashtable<Integer, Worker> openConnections;
-    private Hashtable<Integer, String> userConnections_tcp;
+	/**
+	 * @param componentName      the name of the component - represented in the prompt
+	 * @param server_config      the configuration to use
+	 * @param userRequestStream  the input stream to read user input from
+	 * @param userResponseStream the output stream to write the console output to
+	 */
+	public Chatserver(String componentName, Config server_config, InputStream userRequestStream,
+	                  PrintStream userResponseStream) {
+		this.componentName = componentName;
+		this.server_config = server_config;
+		this.userRequestStream = userRequestStream;
+		this.userResponseStream = userResponseStream;
 
-    /**
-     * @param componentName      the name of the component - represented in the prompt
-     * @param server_config      the configuration to use
-     * @param userRequestStream  the input stream to read user input from
-     * @param userResponseStream the output stream to write the console output to
-     */
-    public Chatserver(String componentName, Config server_config,
-                      InputStream userRequestStream, PrintStream userResponseStream) {
-        this.componentName = componentName;
-        this.server_config = server_config;
-        this.userRequestStream = userRequestStream;
-        this.userResponseStream = userResponseStream;
+		openConnections = new Hashtable<>();
+		executor = Executors.newCachedThreadPool();
+		usermodul = new Usermodul();
 
-        Config user_config = new Config("user");
-        usersStatus = new Hashtable<>();
-        passwords = new HashMap<>();
+		shell = new Shell(componentName, userRequestStream, userResponseStream);
+		shell.register(this);
+	}
 
-        for (String user : user_config.listKeys()) {
-            usersStatus.put(user.replaceAll(".password", ""), false);
-            passwords.put(user.replaceAll(".password", ""), user_config.getString(user));
-        }
+	@Override
+	public void run() {
+		LOGGER.info("Starting Server " + componentName);
 
-        openConnections = new Hashtable<>();
-        userConnections_tcp = new Hashtable<>();
-        executor = Executors.newCachedThreadPool();
-    }
+		TCPListener = new TCPListener(this, server_config, userResponseStream, executor);
+		UDPListener = new UDPListener(this, server_config, userResponseStream, executor);
 
-    @Override
-    public void run() {
-        TCPListener = new TCPListener(this, server_config, userResponseStream, executor);
-        UDPListener = new UDPListener(this, server_config, userResponseStream, executor);
+		executor.execute(shell);
+		executor.execute(TCPListener);
+		executor.execute(UDPListener);
+	}
 
-        executor.execute(TCPListener);
-        executor.execute(UDPListener);
+	@Override
+	@Command
+	public String users() throws IOException {
+		return usermodul.getUserString();
+	}
 
-        Scanner scanner = new Scanner(userRequestStream);
+	@Override
+	@Command
+	public String exit() throws IOException {
+		LOGGER.info("Shutting down " + componentName);
+		running = false;
+		for (Worker worker : this.getOpenConnections().values()) {
+			if (worker.isRunning()) {
+				worker.terminate();
+			}
+		}
+		TCPListener.terminate();
+		UDPListener.terminate();
+		executor.shutdown();
+		shell.close();
+		return "Stopping server";
+	}
 
-        while (running) {
-            try {
-                String input = scanner.next();
+	public synchronized Hashtable<Integer, Worker> getOpenConnections() {
+		return openConnections;
+	}
 
-                switch (input) {
-                    case "!usersStatus":
-                        userResponseStream.println(this.users());
-                        break;
-                    case "!exit":
-                        userResponseStream.println(this.exit());
-                        break;
-                    default:
-                        userResponseStream.println("unknown command");
-                }
-            } catch (IOException e) {
-                userResponseStream.println("error processing user input: ");
-                userResponseStream.println(e.getMessage());
-            }
-        }
-    }
+	public synchronized void addConnection(Integer ID, Worker worker) {
+		openConnections.put(ID, worker);
+	}
 
-    @Override
-    public String users() throws IOException {
-        String result = "";
-        for (String user : usersStatus.keySet()) {
-            result += user + ": " + (usersStatus.get(user) ? "online" : "offline") + "\n";
-        }
-        return result.substring(0, result.lastIndexOf('\n'));
-    }
+	public synchronized void removeConnection(Integer ID) {
+		openConnections.remove(ID);
+	}
 
-    @Override
-    public String exit() throws IOException {
-        running = false;
-        String message = "Shutting down " + componentName + "\n";
+	public synchronized String getLastMsg() {
+		return lastMsg;
+	}
 
-        for (Worker worker : this.getOpenConnections().values()) {
-            if (worker.isRunning()) {
-                worker.terminate();
-            }
-        }
+	public synchronized void setLastMsg(String lastMsg) {
+		this.lastMsg = lastMsg;
+	}
 
-        message += TCPListener.terminate();
-        message += UDPListener.terminate();
-        executor.shutdown();
-        message += "Shutting down finished";
-        return message;
-    }
+	/**
+	 * @param args the first argument is the name of the {@link Chatserver}
+	 *             component
+	 */
+	public static void main(String[] args) throws IOException, InterruptedException {
 
-    /**
-     * @param args the first argument is the name of the {@link Chatserver}
-     *             component
-     */
-    public static void main(String[] args) throws IOException, InterruptedException {
-        Chatserver chatserver = new Chatserver(args[0],
-                new Config("chatserver"), System.in, System.out);
+		try {
+			InputStream inputStream = Chatserver.class.getResourceAsStream("/logging.properties");
+			LogManager.getLogManager().readConfiguration(inputStream);
+		} catch (Exception e) {
+			LOGGER.log(Level.SEVERE, "Error setting Log-Properties", e);
+		}
 
-        chatserver.run();
-    }
+		Chatserver chatserver = new Chatserver(args[0], new Config("chatserver"), System.in, System.out);
+		chatserver.run();
+	}
 
-    public Hashtable<String, Boolean> getUsersStatus() {
-        return usersStatus;
-    }
-
-    public HashMap<String, String> getPasswords() {
-        return passwords;
-    }
-
-    public synchronized Hashtable<Integer, Worker> getOpenConnections() {
-        return openConnections;
-    }
-
-    public synchronized Hashtable<Integer, String> getUserConnections_tcp() {
-        return userConnections_tcp;
-    }
+	public Usermodul getUsermodul() {
+		return usermodul;
+	}
 }

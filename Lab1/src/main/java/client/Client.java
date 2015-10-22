@@ -5,185 +5,230 @@ import channel.TCPChannel;
 import channel.UDPChannel;
 import cli.Command;
 import cli.Shell;
-import client.listener.TCPClientListener;
+import client.communication.PrivateListener;
+import client.communication.PublicListener;
 import util.Config;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
 import java.net.DatagramSocket;
+import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.logging.Level;
+import java.util.logging.LogManager;
 import java.util.logging.Logger;
 
 public class Client implements IClientCli, Runnable {
-    private static final Logger LOGGER = Logger.getLogger(Client.class.getName());
+	private static final Logger LOGGER         = Logger.getLogger(Client.class.getName());
+	public static        int    WORKER_COUNTER = 0;
 
-    private final ExecutorService executor;
-    private Channel channel_tcp;
-    private Channel channel_udp;
-    private Shell shell;
-    private TCPClientListener activListener;
+	private final ExecutorService executor;
+	private final String          componentName;
+	private final String          host;
+	private final Integer         port_tcp;
+	private final Integer         port_udp;
+	private       String          lastLookupAdress;
+	private       boolean         lookupPerfomed;
+	private       Channel         channel_tcp;
+	private       Channel         channel_udp;
+	private       Shell           shell;
+	private       PublicListener  activListener;
+	private       PrivateListener privateListener;
+	private       Socket          socket_tcp;
+	private       DatagramSocket  socket_udp;
+	private String username = "";
+	private volatile boolean loggedIn;
 
-    private Socket socket_tcp;
-    private DatagramSocket socket_udp;
+	private Config      config;
+	private InputStream userRequestStream;
+	private PrintStream userResponseStream;
 
-    private final String componentName;
-    private final String host;
-    private final Integer port_tcp;
-    private final Integer port_udp;
-    private String username = "";
-    private boolean loggedIn;
+	/**
+	 * @param componentName      the name of the component - represented in the prompt
+	 * @param config             the configuration to use
+	 * @param userRequestStream  the input stream to read user input from
+	 * @param userResponseStream the output stream to write the console output to
+	 */
+	public Client(String componentName, Config config, InputStream userRequestStream, PrintStream userResponseStream) {
+		this.componentName = componentName;
+		this.config = config;
+		this.userRequestStream = userRequestStream;
+		this.userResponseStream = userResponseStream;
 
-    private Config config;
-    private InputStream userRequestStream;
-    private PrintStream userResponseStream;
+		this.executor = Executors.newCachedThreadPool();
 
-    /**
-     * @param componentName      the name of the component - represented in the prompt
-     * @param config             the configuration to use
-     * @param userRequestStream  the input stream to read user input from
-     * @param userResponseStream the output stream to write the console output to
-     */
-    public Client(String componentName, Config config,
-                  InputStream userRequestStream, PrintStream userResponseStream) {
-        this.componentName = componentName;
-        this.config = config;
-        this.userRequestStream = userRequestStream;
-        this.userResponseStream = userResponseStream;
+		this.host = config.getString("chatserver.host");
+		this.port_udp = config.getInt("chatserver.udp.port");
+		this.port_tcp = config.getInt("chatserver.tcp.port");
 
-        this.executor = Executors.newCachedThreadPool();
+		shell = new Shell(componentName, userRequestStream, userResponseStream);
+		shell.register(this);
+	}
 
-        this.host = config.getString("chatserver.host");
-        this.port_udp = config.getInt("chatserver.udp.port");
-        this.port_tcp = config.getInt("chatserver.tcp.port");
+	@Override
+	public void run() {
 
-        shell = new Shell(componentName, userRequestStream, userResponseStream);
-        shell.register(this);
-    }
+		try {
+			LOGGER.info("starting client " + componentName);
 
-    @Override
-    public void run() {
-        LOGGER.info("starting client " + componentName);
+			socket_tcp = new Socket(host, port_tcp);
+			socket_udp = new DatagramSocket();
 
-        try {
-            socket_tcp = new Socket(host, port_tcp);
-            socket_udp = new DatagramSocket();
+			this.activListener = new PublicListener(this, socket_tcp, userResponseStream);
+			this.channel_tcp = new TCPChannel(socket_tcp);
+			this.channel_udp = new UDPChannel(socket_udp, host, port_udp);
 
-            this.activListener = new TCPClientListener(socket_tcp, userResponseStream);
-            this.channel_tcp = new TCPChannel(socket_tcp);
-            this.channel_udp = new UDPChannel(socket_udp, host, port_udp);
+			executor.execute(shell);
+			executor.execute(activListener);
 
-            executor.execute(shell);
-            executor.execute(activListener);
+		} catch (IOException e) {
+			LOGGER.log(Level.SEVERE, "error openen sockets", e);
+			userResponseStream.println("Error, server not reachable!");
+			this.exit();
+		}
+	}
 
-        } catch (IOException e) {
-            LOGGER.log(Level.SEVERE, "error openen sockets", e);
-            userResponseStream.println("Error, server not reachable!");
-            this.exit();
-        }
-        System.out.println(getClass().getName() + " up and waiting for commands!");
-    }
+	@Override
+	@Command
+	public String login(String username, String password) throws IOException {
+		this.username = username;
+		this.loggedIn = true;
+		channel_tcp.send("login;" + username + ";" + password);
+		return null;
+	}
 
-    @Override
-    @Command
-    public String login(String username, String password) throws IOException {
-        this.username = username;
-        this.loggedIn = true;
-        channel_tcp.send("login;" + username + ";" + password);
-        return null;
-    }
+	@Override
+	@Command
+	public String logout() throws IOException {
+		loggedIn = false;
+		channel_tcp.send("logout;" + username);
+		return null;
+	}
 
-    @Override
-    @Command
-    public String logout() throws IOException {
-        loggedIn = false;
-        channel_tcp.send("logout;" + username);
-        return null;
-    }
+	@Override
+	@Command
+	public String send(String message) throws IOException {
+		channel_tcp.send("send;" + message);
+		return null;
+	}
 
-    @Override
-    @Command
-    public String send(String message) throws IOException {
-        channel_tcp.send("send;" + message);
-        return null;
-    }
+	@Override
+	@Command
+	public String list() throws IOException {
+		channel_udp.send("list");
+		return channel_udp.receive();
+	}
 
-    @Override
-    @Command
-    public String list() throws IOException {
-        channel_udp.send("list");
-        return channel_udp.receive();
-    }
+	@Override
+	@Command
+	public String msg(String username, String message) throws IOException {
 
-    @Override
-    @Command
-    public String msg(String username, String message) throws IOException {
-        channel_tcp.send("msg;" + username + ";" + message);
-        return null;
-    }
+		this.lookup(username);
+		while (!lookupPerfomed) {
+			try {
+				Thread.sleep(100);
+			} catch (InterruptedException ignored) {
 
-    @Override
-    @Command
-    public String lookup(String username) throws IOException {
-        channel_tcp.send("lookup;" + username);
-        return null;
-    }
+			}
+		}
+		lookupPerfomed = false;
+		String[] split = lastLookupAdress.split(":");
+		if (split.length == 2) {
+			String host = split[0];
+			String port = split[1];
+			Socket socket = new Socket(host, Integer.parseInt(port));
+			TCPChannel channel = new TCPChannel(socket);
+			channel.send(message);
+		}
+		return null;
+	}
 
-    @Override
-    @Command
-    public String register(String privateAddress) throws IOException {
-        channel_tcp.send("register;" + privateAddress);
-        return null;
-    }
+	@Override
+	@Command
+	public String lookup(String username) throws IOException {
+		channel_tcp.send("lookup;" + username);
+		return null;
+	}
 
-    @Override
-    @Command
-    public String lastMsg() throws IOException {
-        channel_tcp.send("lastMsg");
-        return null;
-    }
+	@Override
+	@Command
+	public String register(String privateAddress) throws IOException {
+		String[] split = privateAddress.split(":");
+		if (split.length == 2) {
+			String port = split[1];
 
-    @Override
-    @Command
-    public String exit() {
-        LOGGER.info("shutting down client");
-        try {
-            if (loggedIn) this.logout();
-            channel_tcp.send("quit");
+			channel_tcp.send("register;" + privateAddress);
 
-            activListener.terminate();
-            channel_udp.terminate();
-            channel_tcp.terminate();
-            socket_tcp.close();
-            socket_udp.close();
-            shell.close();
-            executor.shutdown();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+			ServerSocket privateSocket = new ServerSocket(Integer.parseInt(port));
+			privateListener = new PrivateListener(this, privateSocket, userResponseStream, executor);
+			executor.execute(privateListener);
 
-        return "shutdown complete";
-    }
+		} else {
+			LOGGER.log(Level.SEVERE, "wrong format: " + privateAddress);
+			return "wrong format! need IP:Port";
+		}
+		return null;
+	}
 
-    /**
-     * @param args the first argument is the name of the {@link Client} component
-     */
-    public static void main(String[] args) {
-        Client client = new Client(args[0], new Config("client"), System.in,
-                System.out);
-        client.run();
-    }
+	@Override
+	@Command
+	public String lastMsg() throws IOException {
+		channel_tcp.send("lastMsg");
+		return null;
+	}
 
-    // --- Commands needed for Lab 2. Please note that you do not have to
-    // implement them for the first submission. ---
+	@Override
+	@Command
+	public String exit() {
+		LOGGER.info("shutting down client");
+		try {
+			if (loggedIn) this.logout();
+			channel_tcp.send("quit");
 
-    @Override
-    public String authenticate(String username) throws IOException {
-        // TODO Auto-generated method stub
-        return null;
-    }
+			activListener.terminate();
+			if (privateListener != null) privateListener.terminate();
+			channel_udp.terminate();
+			channel_tcp.terminate();
+			socket_tcp.close();
+			socket_udp.close();
+			shell.close();
+			executor.shutdown();
+		} catch (IOException e) {
+			LOGGER.log(Level.SEVERE, "Error closing TCP Socket", e);
+		}
 
+		return "shutdown complete";
+	}
+
+	/**
+	 * @param args the first argument is the name of the {@link Client} component
+	 */
+	public static void main(String[] args) {
+		try {
+			InputStream inputStream = Client.class.getResourceAsStream("/logging.properties");
+			LogManager.getLogManager().readConfiguration(inputStream);
+		} catch (Exception e) {
+			LOGGER.log(Level.SEVERE, "Error setting Log-Properties", e);
+		}
+
+		Client client = new Client(args[0], new Config("client"), System.in, System.out);
+		client.run();
+	}
+
+	// --- Commands needed for Lab 2. Please note that you do not have to
+	// implement them for the first submission. ---
+
+	@Override
+	public String authenticate(String username) throws IOException {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	public void setLastLookupAdress(String lastLookupAdress) {
+		lookupPerfomed = true;
+		this.lastLookupAdress = lastLookupAdress;
+	}
 }
