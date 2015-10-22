@@ -6,7 +6,6 @@ import chatserver.worker.TCPWorker;
 import chatserver.worker.Worker;
 
 import java.io.IOException;
-import java.util.Hashtable;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;

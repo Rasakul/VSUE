@@ -1,8 +1,6 @@
 package client.communication;
 
 import channel.TCPChannel;
-import chatserver.Chatserver;
-import chatserver.worker.TCPWorker;
 import client.Client;
 
 import java.io.IOException;
@@ -20,9 +18,9 @@ import java.util.regex.Pattern;
 public class PrivateListener implements ClientCommunication {
 	private static final Logger LOGGER = Logger.getLogger(PrivateListener.class.getName());
 
-	private final Client       client;
-	private final ServerSocket serverSocket;
-	private final PrintStream  userResponseStream;
+	private final Client          client;
+	private final ServerSocket    serverSocket;
+	private final PrintStream     userResponseStream;
 	private final ExecutorService executor;
 
 	private volatile boolean running = true;

@@ -17,7 +17,7 @@ public class LastMsgOperation implements Operation {
 
 	@Override
 	public String process(Integer workerID, String line) {
-		if(chatserver.getUsermodul().isLogedin(workerID)){
+		if (chatserver.getUsermodul().isLogedin(workerID)) {
 			return chatserver.getLastMsg();
 		} else {
 			return "Permission denied, user not logged in!";

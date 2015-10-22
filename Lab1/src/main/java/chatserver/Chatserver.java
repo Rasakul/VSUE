@@ -61,6 +61,23 @@ public class Chatserver implements IChatserverCli, Runnable {
 		shell.register(this);
 	}
 
+	/**
+	 * @param args the first argument is the name of the {@link Chatserver}
+	 *             component
+	 */
+	public static void main(String[] args) throws IOException, InterruptedException {
+
+		try {
+			InputStream inputStream = Chatserver.class.getResourceAsStream("/logging.properties");
+			LogManager.getLogManager().readConfiguration(inputStream);
+		} catch (Exception e) {
+			LOGGER.log(Level.SEVERE, "Error setting Log-Properties", e);
+		}
+
+		Chatserver chatserver = new Chatserver(args[0], new Config("chatserver"), System.in, System.out);
+		chatserver.run();
+	}
+
 	@Override
 	public void run() {
 		LOGGER.info("Starting Server " + componentName);
@@ -114,23 +131,6 @@ public class Chatserver implements IChatserverCli, Runnable {
 
 	public synchronized void setLastMsg(String lastMsg) {
 		this.lastMsg = lastMsg;
-	}
-
-	/**
-	 * @param args the first argument is the name of the {@link Chatserver}
-	 *             component
-	 */
-	public static void main(String[] args) throws IOException, InterruptedException {
-
-		try {
-			InputStream inputStream = Chatserver.class.getResourceAsStream("/logging.properties");
-			LogManager.getLogManager().readConfiguration(inputStream);
-		} catch (Exception e) {
-			LOGGER.log(Level.SEVERE, "Error setting Log-Properties", e);
-		}
-
-		Chatserver chatserver = new Chatserver(args[0], new Config("chatserver"), System.in, System.out);
-		chatserver.run();
 	}
 
 	public Usermodul getUsermodul() {

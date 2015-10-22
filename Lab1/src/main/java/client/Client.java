@@ -68,6 +68,21 @@ public class Client implements IClientCli, Runnable {
 		shell.register(this);
 	}
 
+	/**
+	 * @param args the first argument is the name of the {@link Client} component
+	 */
+	public static void main(String[] args) {
+		try {
+			InputStream inputStream = Client.class.getResourceAsStream("/logging.properties");
+			LogManager.getLogManager().readConfiguration(inputStream);
+		} catch (Exception e) {
+			LOGGER.log(Level.SEVERE, "Error setting Log-Properties", e);
+		}
+
+		Client client = new Client(args[0], new Config("client"), System.in, System.out);
+		client.run();
+	}
+
 	@Override
 	public void run() {
 
@@ -201,21 +216,6 @@ public class Client implements IClientCli, Runnable {
 		}
 
 		return "shutdown complete";
-	}
-
-	/**
-	 * @param args the first argument is the name of the {@link Client} component
-	 */
-	public static void main(String[] args) {
-		try {
-			InputStream inputStream = Client.class.getResourceAsStream("/logging.properties");
-			LogManager.getLogManager().readConfiguration(inputStream);
-		} catch (Exception e) {
-			LOGGER.log(Level.SEVERE, "Error setting Log-Properties", e);
-		}
-
-		Client client = new Client(args[0], new Config("client"), System.in, System.out);
-		client.run();
 	}
 
 	// --- Commands needed for Lab 2. Please note that you do not have to
