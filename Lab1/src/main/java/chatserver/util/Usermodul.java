@@ -2,45 +2,39 @@ package chatserver.util;
 
 import util.Config;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Hashtable;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Created by Lukas on 22.10.2015.
  */
 public class Usermodul {
 
-	private HashMap<String, String>    UserPasswords;
-	private Hashtable<String, Boolean> usersStatus;
-	private Hashtable<Integer, String> loggedinUser;
-	private Hashtable<String, String>  registerdUser;
+	private SortedMap<String, String>  userPasswords;
+	private SortedMap<Integer, String> loggedinUser;
+	private SortedMap<String, String>  registerdUser;
 
 	public Usermodul() {
 
 		Config user_config = new Config("user");
-		usersStatus = new Hashtable<>();
-		UserPasswords = new HashMap<>();
+
+		userPasswords = Collections.synchronizedSortedMap(new TreeMap<String, String>());
+		loggedinUser = Collections.synchronizedSortedMap(new TreeMap<Integer, String>());
+		registerdUser = Collections.synchronizedSortedMap(new TreeMap<String, String>());
 
 		for (String user : user_config.listKeys()) {
-			usersStatus.put(user.replaceAll(".password", ""), false);
-			UserPasswords.put(user.replaceAll(".password", ""), user_config.getString(user));
+			userPasswords.put(user.replaceAll(".password", ""), user_config.getString(user));
 		}
-
-		loggedinUser = new Hashtable<>();
-		registerdUser = new Hashtable<>();
 	}
 
 	public boolean checkPassword(String username, String password) {
-		return UserPasswords.containsKey(username) && password.equals(UserPasswords.get(username));
+		return userPasswords.containsKey(username) && password.equals(userPasswords.get(username));
 	}
 
 	public boolean checkKnownUser(String username) {
-		return UserPasswords.containsKey(username);
+		return userPasswords.containsKey(username);
 	}
 
-	public synchronized boolean isRegisterd(String username) {
+	public boolean isRegisterd(String username) {
 		return registerdUser.containsKey(username);
 	}
 
@@ -52,32 +46,32 @@ public class Usermodul {
 		return loggedinUser.get(worker_ID);
 	}
 
-	public synchronized boolean isLogedin(Integer worker_ID) {
+	public boolean isLogedin(Integer worker_ID) {
 		return loggedinUser.containsKey(worker_ID);
 	}
 
-	public synchronized boolean isLogedin(String username) {
-		return loggedinUser.contains(username);
+	public boolean isLogedin(String username) {
+		return loggedinUser.containsValue(username);
 	}
 
-	public synchronized void registerUser(String username, String adress) {
-		if (registerdUser.contains(username)) registerdUser.remove(username);
+	public void registerUser(String username, String adress) {
+		if (registerdUser.containsKey(username)) registerdUser.remove(username);
 		registerdUser.put(username, adress);
 	}
 
-	public synchronized void loginUser(Integer workerID, String username) {
+	public void loginUser(Integer workerID, String username) {
 		loggedinUser.put(workerID, username);
 	}
 
-	public synchronized void logoutUser(Integer workerID) {
+	public void logoutUser(Integer workerID) {
 		loggedinUser.remove(workerID);
 	}
 
-	public synchronized Set<Integer> getLoggedinWorkers() {
+	public Set<Integer> getLoggedinWorkers() {
 		return loggedinUser.keySet();
 	}
 
-	public synchronized String getOnlineUsers() {
+	public String getOnlineUsers() {
 		ArrayList<String> users = new ArrayList<>();
 		for (int id : loggedinUser.keySet()) {
 			users.add(loggedinUser.get(id));
@@ -90,10 +84,10 @@ public class Usermodul {
 		return online.substring(0, online.lastIndexOf('\n'));
 	}
 
-	public synchronized String getUserString() {
+	public String getUserString() {
 		String result = "";
-		for (String user : usersStatus.keySet()) {
-			result += user + "    : " + (usersStatus.get(user) ? "online" : "offline") + "\n";
+		for (String user : userPasswords.keySet()) {
+			result += user + "    : " + (loggedinUser.containsValue(user) ? "online" : "offline") + "\n";
 		}
 		return result.substring(0, result.lastIndexOf('\n'));
 	}

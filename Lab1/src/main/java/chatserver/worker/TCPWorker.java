@@ -80,7 +80,7 @@ public class TCPWorker implements Worker {
 			running = false;
 			channel.terminate();
 			clientSocket.close();
-			chatserver.getOpenConnections().remove(ID);
+			chatserver.removeConnection(ID);
 		} catch (IOException e) {
 			LOGGER.log(Level.SEVERE, "Error closing TCP Socket", e);
 		}

@@ -31,15 +31,13 @@ import static util.TestUtils.*;
 /**
  * Executes the test scenarios.
  */
-@RunWith(ScenarioRunner.class)
-public class ScenarioTest {
+@RunWith(ScenarioRunner.class) public class ScenarioTest {
 
-	static SpelExpressionParser parser = new SpelExpressionParser(new SpelParserConfiguration(true, true));
-	StandardEvaluationContext ctx;
-
-	static final ComponentFactory factory = new ComponentFactory();
+	static final ComponentFactory          factory      = new ComponentFactory();
 	static final Map<String, CliComponent> componentMap = new HashMap<>();
+	static SpelExpressionParser parser = new SpelExpressionParser(new SpelParserConfiguration(true, true));
 	static CliComponent component;
+	StandardEvaluationContext ctx;
 
 	@Before
 	public void setUp() {
@@ -83,7 +81,8 @@ public class ScenarioTest {
 				String instruction = "create" + parts[1];
 				String componentName = parts[2];
 
-				Method method = factory.getClass().getMethod(instruction, String.class, TestInputStream.class, TestOutputStream.class);
+				Method method = factory.getClass().getMethod(instruction, String.class, TestInputStream.class,
+				                                             TestOutputStream.class);
 				if (method == null) {
 					throw new IllegalArgumentException(String.format("Method '%s' not found.", instruction));
 				}
@@ -110,7 +109,8 @@ public class ScenarioTest {
 						cause = cause.getCause();
 					}
 					if (cause instanceof AssertionError) {
-						System.err.println(cause.getClass().getSimpleName() + ": " + cause.getMessage());
+						throw cause;
+						//System.err.println(cause.getClass().getSimpleName() + ": " + cause.getMessage());
 					} else {
 						throw cause;
 					}
@@ -123,8 +123,8 @@ public class ScenarioTest {
 				String[] parts = line.split(":?\\s+", 2);
 				component = componentMap.get(parts[0]);
 				if (component == null) {
-					throw new IllegalStateException(String.format(
-							"Cannot find component '%s'. Please start it before using it.", parts[0]));
+					throw new IllegalStateException(
+							String.format("Cannot find component '%s'. Please start it before using it.", parts[0]));
 				}
 				component.in.addLine(parts[1].trim());
 				Thread.sleep(500);
@@ -160,11 +160,10 @@ public class ScenarioTest {
 			actual = actual.toLowerCase();
 		}
 
-		String msg = String.format("String must %s%s '%s' but was:%s",
-				contains(Flag.NOT, (Object[]) flags) ? "NOT " : "",
-				contains(Flag.REGEX, (Object[]) flags) ? "match pattern" : "contain",
-				expected,
-				lines.size() > 1 ? "\n" + actual : String.format(" '%s'", actual));
+		String msg = String
+				.format("String must %s%s '%s' but was:%s", contains(Flag.NOT, (Object[]) flags) ? "NOT " : "",
+				        contains(Flag.REGEX, (Object[]) flags) ? "match pattern" : "contain", expected,
+				        lines.size() > 1 ? "\n" + actual : String.format(" '%s'", actual));
 
 		matcher = contains(Flag.NOT, (Object[]) flags) ? CoreMatchers.not(matcher) : matcher;
 
@@ -175,8 +174,8 @@ public class ScenarioTest {
 	 * Represents a single component and its input and output streams.
 	 */
 	static class CliComponent {
-		Object component;
-		TestInputStream in;
+		Object           component;
+		TestInputStream  in;
 		TestOutputStream out;
 
 		public CliComponent(Object component, TestInputStream in, TestOutputStream out) {

@@ -19,7 +19,6 @@ public class OperationFactory {
 		operationMap.put("login", new LoginOperation(chatserver));
 		operationMap.put("logout", new LogoutOperation(chatserver));
 		operationMap.put("send", new PublicMessageOperation(chatserver));
-		operationMap.put("lastMsg", new LastMsgOperation(chatserver));
 		operationMap.put("register", new RegisterOperation(chatserver));
 		operationMap.put("lookup", new LookupOperation(chatserver));
 	}

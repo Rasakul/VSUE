@@ -17,8 +17,10 @@ public final class TestUtils {
 	 *
 	 * @param character the character to repeat
 	 * @param count     the number of times to repeat it; a nonnegative integer
+	 *
 	 * @return a string containing {@code character} repeated {@code count} times
 	 * (the empty string if {@code count} is zero)
+	 *
 	 * @throws IllegalArgumentException if {@code count} is negative
 	 */
 	public static char[] repeat(char character, int count) {
@@ -36,7 +38,9 @@ public final class TestUtils {
 	 * that <tt>(objectToFind.equals(e))</tt>.
 	 *
 	 * @param objectToFind element whose presence in the array is to be tested
+	 *
 	 * @return {@code true} if the array contains the specified element, {@code false} otherwise
+	 *
 	 * @throws NullPointerException if the specified element is null
 	 */
 	public static boolean contains(Object objectToFind, Object... array) {
@@ -58,6 +62,7 @@ public final class TestUtils {
 	 *
 	 * @param separator the delimiter that separates each element
 	 * @param strings   the elements to join together.
+	 *
 	 * @return a new {@code String} that is composed of the {@code strings} separated by the {@code separator}
 	 */
 	public static String join(String separator, List<String> strings) {

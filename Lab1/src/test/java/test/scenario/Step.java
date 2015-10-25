@@ -9,7 +9,7 @@ import java.nio.file.Path;
  */
 public final class Step {
 	private final Description description;
-	private final Path file;
+	private final Path        file;
 
 	public Step(Description description, Path file) {
 		this.description = description;

@@ -45,7 +45,7 @@ public class TCPListener implements Serverlistener {
 				Socket clientSocket = server_socket.accept();
 				int id = Chatserver.WORKER_COUNTER++;
 				TCPWorker worker_tcp = new TCPWorker(id, chatserver, clientSocket, userResponseStream);
-				chatserver.getOpenConnections().put(id, worker_tcp);
+				chatserver.addConnection(id, worker_tcp);
 				executor.execute(worker_tcp);
 			}
 		} catch (IOException e) {
@@ -67,7 +67,7 @@ public class TCPListener implements Serverlistener {
 		try {
 			LOGGER.info("Stopping TCP Listener");
 			running = false;
-			server_socket.close();
+			if (server_socket != null) server_socket.close();
 		} catch (IOException e) {
 			LOGGER.log(Level.SEVERE, "Error closing TCP Socket", e);
 		}

@@ -21,33 +21,25 @@ public class ScenarioRunner extends BlockJUnit4ClassRunner {
 	private Description description;
 	private Queue<Step> steps = new ArrayDeque<>();
 
-	public static ScenarioRunner getInstance() {
-		return instance;
-	}
-
 	public ScenarioRunner(Class<?> testClass) throws InitializationError {
 		super(testClass);
 		instance = this;
 	}
 
-	@Override
-	protected Object createTest() throws Exception {
-		return getTestClass().getJavaClass().getDeclaredConstructor().newInstance();
+	public static ScenarioRunner getInstance() {
+		return instance;
 	}
 
-	@Override
-	protected Statement methodInvoker(final FrameworkMethod method, final Object test) {
-		return new InvokeMethod(method, test) {
-			@Override
-			public void evaluate() throws Throwable {
-				try {
-					method.invokeExplosively(test);
-				} catch (Throwable t) {
-					// Print the stack trace in order to give an indication about the cause
-					t.printStackTrace();
-				}
-			}
-		};
+	/**
+	 * Returns the unqualified filename without extension.
+	 *
+	 * @param name the filename
+	 *
+	 * @return the base name
+	 */
+	private static String getBaseName(String name) {
+		int index = name.indexOf(EXTENSION_SEPARATOR);
+		return index < 0 ? name : name.substring(0, index);
 	}
 
 	@Override
@@ -72,6 +64,28 @@ public class ScenarioRunner extends BlockJUnit4ClassRunner {
 		return Collections.nCopies(steps.size(), super.getChildren().get(0));
 	}
 
+	@Override
+	protected Object createTest() throws Exception {
+		return getTestClass().getJavaClass().getDeclaredConstructor().newInstance();
+	}
+
+	@Override
+	protected Statement methodInvoker(final FrameworkMethod method, final Object test) {
+		return new InvokeMethod(method, test) {
+			@Override
+			public void evaluate() throws Throwable {
+				try {
+					method.invokeExplosively(test);
+				} catch (Throwable t) {
+					// Print the stack trace in order to give an indication about the cause
+					throw t;
+					//t.printStackTrace();
+
+				}
+			}
+		};
+	}
+
 	/**
 	 * Registers the scenario in the given directory with all its steps.
 	 *
@@ -80,21 +94,10 @@ public class ScenarioRunner extends BlockJUnit4ClassRunner {
 	private void addScenario(Path scenarioDir) {
 		for (Path path : ScenarioUtils.listSteps(scenarioDir)) {
 			Description stepDescription = Description.createTestDescription(getTestClass().getJavaClass().getName(),
-					getBaseName(path.getFileName().toString()));
+			                                                                getBaseName(path.getFileName().toString()));
 			description.addChild(stepDescription);
 			steps.add(new Step(stepDescription, path));
 		}
-	}
-
-	/**
-	 * Returns the unqualified filename without extension.
-	 *
-	 * @param name the filename
-	 * @return the base name
-	 */
-	private static String getBaseName(String name) {
-		int index = name.indexOf(EXTENSION_SEPARATOR);
-		return index < 0 ? name : name.substring(0, index);
 	}
 
 	public Queue<Step> getSteps() {

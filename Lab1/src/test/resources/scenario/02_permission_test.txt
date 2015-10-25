@@ -1,0 +1,39 @@
+*	Chatserver	chatserver
+*	Client		alice.vienna.at
+*	Client		steve.rome.it
+
+steve.rome.it:	    !login steve.rome.it 34567
+>					verify("success")
+
+steve.rome.it:	    !register 127.0.0.1:56074
+>					verify("success")
+
+
+
+alice.vienna.at:    !register 127.0.0.1:55074
+>					verify(".*Permission denied.*", T(test.util.Flag).REGEX)
+
+alice.vienna.at:    !logout
+>					verify(".*Unknown username.*", T(test.util.Flag).REGEX)
+
+alice.vienna.at:    !lookup steve.rome.it
+>					verify(".*Permission denied.*", T(test.util.Flag).REGEX)
+
+
+
+alice.vienna.at:	!login alice.vienna.at 12345
+>					verify("success")
+
+alice.vienna.at:    !register 127.0.0.1:55074
+>					verify(".*Successfully registered address for alice.vienna.at.*", T(test.util.Flag).REGEX)
+
+alice.vienna.at:    !lookup steve.rome.it
+>					verify(".*127.0.0.1:56074.*", T(test.util.Flag).REGEX)
+
+alice.vienna.at:    !logout
+>					verify("success")
+
+
+alice.vienna.at:    !exit
+steve.rome.it:      !exit
+chatserver:         !exit

@@ -38,7 +38,6 @@ public class Chatserver implements IChatserverCli, Runnable {
 	private boolean running = true;
 
 	private Hashtable<Integer, Worker> openConnections;
-	private String                     lastMsg;
 
 	/**
 	 * @param componentName      the name of the component - represented in the prompt
@@ -101,7 +100,7 @@ public class Chatserver implements IChatserverCli, Runnable {
 	public String exit() throws IOException {
 		LOGGER.info("Shutting down " + componentName);
 		running = false;
-		for (Worker worker : this.getOpenConnections().values()) {
+		for (Worker worker : this.openConnections.values()) {
 			if (worker.isRunning()) {
 				worker.terminate();
 			}
@@ -113,27 +112,11 @@ public class Chatserver implements IChatserverCli, Runnable {
 		return "Stopping server";
 	}
 
-	public synchronized Hashtable<Integer, Worker> getOpenConnections() {
-		return openConnections;
-	}
+	public synchronized void addConnection(Integer ID, Worker worker) {openConnections.put(ID, worker); }
 
-	public synchronized void addConnection(Integer ID, Worker worker) {
-		openConnections.put(ID, worker);
-	}
+	public synchronized void removeConnection(Integer ID) {openConnections.remove(ID); }
 
-	public synchronized void removeConnection(Integer ID) {
-		openConnections.remove(ID);
-	}
+	public synchronized Worker getConnectionByID(Integer ID) {return openConnections.get(ID);}
 
-	public synchronized String getLastMsg() {
-		return lastMsg;
-	}
-
-	public synchronized void setLastMsg(String lastMsg) {
-		this.lastMsg = lastMsg;
-	}
-
-	public Usermodul getUsermodul() {
-		return usermodul;
-	}
+	public Usermodul getUsermodul() {return usermodul; }
 }

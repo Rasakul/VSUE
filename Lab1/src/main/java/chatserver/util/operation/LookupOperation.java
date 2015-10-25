@@ -20,20 +20,19 @@ public class LookupOperation implements Operation {
 		Usermodul usermodul = chatserver.getUsermodul();
 		if (usermodul.isLogedin(workerID)) {
 			String username;
-
 			String[] split = line.split(";");
 			if (split.length == 2) {
 				username = split[1];
 				if (usermodul.isRegisterd(username)) {
 					response = "lookup:" + usermodul.getAdress(username);
 				} else {
-					response = "User not registered!";
+					response = "lookuperror:User not registered!";
 				}
 			} else {
-				response = "Invalid command!";
+				response = "lookuperror:Invalid command!";
 			}
 		} else {
-			response = "Permission denied, user not logged in!";
+			response = "lookuperror:Permission denied, user not logged in!";
 		}
 		return response;
 	}

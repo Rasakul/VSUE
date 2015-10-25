@@ -15,6 +15,7 @@ import java.io.PrintStream;
 import java.net.DatagramSocket;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.rmi.ServerException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.logging.Level;
@@ -32,19 +33,21 @@ public class Client implements IClientCli, Runnable {
 	private final Integer         port_udp;
 	private       String          lastLookupAdress;
 	private       boolean         lookupPerfomed;
-	private       Channel         channel_tcp;
-	private       Channel         channel_udp;
-	private       Shell           shell;
-	private       PublicListener  activListener;
-	private       PrivateListener privateListener;
-	private       Socket          socket_tcp;
-	private       DatagramSocket  socket_udp;
+	private boolean lookupError = false;
+	private Channel         channel_tcp;
+	private Channel         channel_udp;
+	private Shell           shell;
+	private PublicListener  activListener;
+	private PrivateListener privateListener;
+	private Socket          socket_tcp;
+	private DatagramSocket  socket_udp;
 	private String username = "";
 	private volatile boolean loggedIn;
 
 	private Config      config;
 	private InputStream userRequestStream;
 	private PrintStream userResponseStream;
+	private String lastMg = "No message received!";
 
 	/**
 	 * @param componentName      the name of the component - represented in the prompt
@@ -144,20 +147,23 @@ public class Client implements IClientCli, Runnable {
 		this.lookup(username);
 		while (!lookupPerfomed) {
 			try {
-				Thread.sleep(100);
+				Thread.sleep(10);
 			} catch (InterruptedException ignored) {
 
 			}
 		}
-		lookupPerfomed = false;
-		String[] split = lastLookupAdress.split(":");
-		if (split.length == 2) {
-			String host = split[0];
-			String port = split[1];
-			Socket socket = new Socket(host, Integer.parseInt(port));
-			TCPChannel channel = new TCPChannel(socket);
-			channel.send(message);
+		if (!lookupError) {
+			String[] split = lastLookupAdress.split(":");
+			if (split.length == 2) {
+				String host = split[0];
+				String port = split[1];
+				Socket socket = new Socket(host, Integer.parseInt(port));
+				TCPChannel channel = new TCPChannel(socket);
+				channel.send("[private] " + username + ": " + message);
+			}
 		}
+		lookupPerfomed = false;
+		lookupError = false;
 		return null;
 	}
 
@@ -172,18 +178,27 @@ public class Client implements IClientCli, Runnable {
 	@Command
 	public String register(String privateAddress) throws IOException {
 		String[] split = privateAddress.split(":");
-		if (split.length == 2) {
-			String port = split[1];
+		if (loggedIn) {
+			if (split.length == 2) {
+				String port = split[1];
 
-			channel_tcp.send("register;" + privateAddress);
+				try {
 
-			ServerSocket privateSocket = new ServerSocket(Integer.parseInt(port));
-			privateListener = new PrivateListener(this, privateSocket, userResponseStream, executor);
-			executor.execute(privateListener);
+					ServerSocket privateSocket = new ServerSocket(Integer.parseInt(port));
+					privateListener = new PrivateListener(this, privateSocket, userResponseStream, executor);
+					executor.execute(privateListener);
 
+					channel_tcp.send("register;" + privateAddress);
+
+				} catch (ServerException e) {
+					userResponseStream.println("Error with address: " + e.getMessage());
+				}
+			} else {
+				LOGGER.log(Level.SEVERE, "wrong format: " + privateAddress);
+				return "wrong format! need IP:Port";
+			}
 		} else {
-			LOGGER.log(Level.SEVERE, "wrong format: " + privateAddress);
-			return "wrong format! need IP:Port";
+			return "Permission denied, user not logged in!";
 		}
 		return null;
 	}
@@ -191,8 +206,7 @@ public class Client implements IClientCli, Runnable {
 	@Override
 	@Command
 	public String lastMsg() throws IOException {
-		channel_tcp.send("lastMsg");
-		return null;
+		return this.lastMg;
 	}
 
 	@Override
@@ -230,5 +244,14 @@ public class Client implements IClientCli, Runnable {
 	public void setLastLookupAdress(String lastLookupAdress) {
 		lookupPerfomed = true;
 		this.lastLookupAdress = lastLookupAdress;
+	}
+
+	public void setLastMsg(String lastMg) {
+		this.lastMg = lastMg;
+	}
+
+	public void setLookupError(boolean lookupError) {
+		lookupPerfomed = true;
+		this.lookupError = lookupError;
 	}
 }

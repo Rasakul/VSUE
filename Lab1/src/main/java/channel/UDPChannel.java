@@ -38,7 +38,7 @@ public class UDPChannel implements Channel {
 
 		DatagramPacket packet_in = new DatagramPacket(new byte[1024], 1024);
 		socket.receive(packet_in);
-		String response = new String(packet_in.getData());
+		String response = new String(packet_in.getData()).split("\u0000")[0];
 		LOGGER.fine("receiving: " + response);
 		return response;
 	}

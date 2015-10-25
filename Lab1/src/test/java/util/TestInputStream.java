@@ -11,7 +11,7 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * Simulates reading lines from an {@link InputStream}.
- *
+ * <p/>
  * Internally, the lines read from the underlying {@link InputStream} are buffered and can be retrieved on demand for
  * verification purposes.
  */
@@ -35,10 +35,20 @@ public class TestInputStream extends InputStream {
 		return in != null ? in.read() : -1;
 	}
 
+	@Override
+	public void close() throws IOException {
+		if (in != System.in) {
+			super.close();
+		}
+		lines = null;
+		Thread.currentThread().interrupt();
+	}
+
 	/**
 	 * Returns a copy of the lines available for reading.
 	 *
 	 * @return the available lines
+	 *
 	 * @throws IOException if the stream is closed
 	 */
 	public List<String> getLines() throws IOException {
@@ -68,6 +78,7 @@ public class TestInputStream extends InputStream {
 	 * This method blocks until a line is available or the stream becomes closed.
 	 *
 	 * @return the {@link InputStream} holding the line
+	 *
 	 * @throws IOException if the stream is closed
 	 */
 	private InputStream nextLine() throws IOException {
@@ -84,14 +95,5 @@ public class TestInputStream extends InputStream {
 		} catch (InterruptedException e) {
 			throw new IOException(e);
 		}
-	}
-
-	@Override
-	public void close() throws IOException {
-		if (in != System.in) {
-			super.close();
-		}
-		lines = null;
-		Thread.currentThread().interrupt();
 	}
 }

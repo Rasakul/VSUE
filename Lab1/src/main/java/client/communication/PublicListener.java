@@ -35,9 +35,16 @@ public class PublicListener implements ClientCommunication {
 			while (running) {
 				String response = channel.receive();
 				if (response != null) {
-					if (response.contains("lookup:")) {
+
+					if (response.contains("lookuperror:")) {
+						response = response.replaceFirst("lookuperror:", "");
+						client.setLookupError(true);
+					} else if (response.contains("lookup:")) {
 						response = response.replaceFirst("lookup:", "");
 						client.setLastLookupAdress(response);
+					} else if (response.contains("public:")) {
+						response = response.replaceFirst("public:", "");
+						client.setLastMsg(response);
 					}
 					userResponseStream.println(response);
 				}

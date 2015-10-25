@@ -13,12 +13,25 @@ import static java.util.Arrays.sort;
  * Provides utility methods for test scenarios.
  * <p/>
  * A <i>scenario</i> is a directory that contains any number of <i>steps</i>.
- *
+ * <p/>
  * A <i>step</i> is a file containing any number of instructions that are executed by the {@link test.ScenarioTest}.
  * The file name has to match the following regular expression {@code \d+_.*} (for example {@code 00_login.txt} or
  * {@code 17_shutdown.txt}).
  */
 public final class ScenarioUtils {
+
+	private static final FileFilter DIRECTORY_FILTER = new FileFilter() {
+		@Override
+		public boolean accept(File pathname) {
+			return pathname.isDirectory() && pathname.canRead();
+		}
+	};
+	private static final FileFilter STEP_FILTER = new FileFilter() {
+		@Override
+		public boolean accept(File pathname) {
+			return pathname.isFile() && pathname.canRead() && pathname.getName().matches("\\d+_.*");
+		}
+	};
 
 	private ScenarioUtils() {
 	}
@@ -29,13 +42,14 @@ public final class ScenarioUtils {
 	 * In other words, it has to contain one or more <i>scenario steps</i>.
 	 *
 	 * @param path the directory containing the scenarios
+	 *
 	 * @return all scenario directories within the given path sorted in lexicographical order
+	 *
 	 * @see #listSteps(Path)
 	 */
 	public static Iterable<Path> listScenarios(Path path) {
 		if (!Files.isDirectory(path)) {
-			throw new IllegalArgumentException(String.format("Path '%s' is not a directory.",
-					path.toAbsolutePath()));
+			throw new IllegalArgumentException(String.format("Path '%s' is not a directory.", path.toAbsolutePath()));
 		}
 		File[] list = path.toFile().listFiles(DIRECTORY_FILTER);
 		if (list == null || list.length == 0) {
@@ -51,17 +65,18 @@ public final class ScenarioUtils {
 	 * Lists all scenario steps within the given directory path.
 	 *
 	 * @param scenarioDirectory the directory to scan
+	 *
 	 * @return all steps sorted in lexicographical order
 	 */
 	public static Iterable<Path> listSteps(Path scenarioDirectory) {
 		if (!Files.isDirectory(scenarioDirectory)) {
-			throw new IllegalArgumentException(String.format("Path '%s' is not a directory.",
-					scenarioDirectory.toAbsolutePath()));
+			throw new IllegalArgumentException(
+					String.format("Path '%s' is not a directory.", scenarioDirectory.toAbsolutePath()));
 		}
 		File[] list = scenarioDirectory.toFile().listFiles(STEP_FILTER);
 		if (list == null || list.length == 0) {
-			throw new IllegalStateException(String.format("No test steps found in directory: '%s'",
-					scenarioDirectory.toAbsolutePath()));
+			throw new IllegalStateException(
+					String.format("No test steps found in directory: '%s'", scenarioDirectory.toAbsolutePath()));
 		}
 		sort(list);
 		return toPaths(list);
@@ -71,6 +86,7 @@ public final class ScenarioUtils {
 	 * Converts the given files to a sequence of paths.
 	 *
 	 * @param files the files
+	 *
 	 * @return the paths
 	 */
 	private static Iterable<Path> toPaths(File... files) {
@@ -80,18 +96,4 @@ public final class ScenarioUtils {
 		}
 		return paths;
 	}
-
-	private static final FileFilter DIRECTORY_FILTER = new FileFilter() {
-		@Override
-		public boolean accept(File pathname) {
-			return pathname.isDirectory() && pathname.canRead();
-		}
-	};
-
-	private static final FileFilter STEP_FILTER = new FileFilter() {
-		@Override
-		public boolean accept(File pathname) {
-			return pathname.isFile() && pathname.canRead() && pathname.getName().matches("\\d+_.*");
-		}
-	};
 }

@@ -31,18 +31,15 @@ public class PublicMessageOperation implements Operation {
 		if (usermodul.isLogedin(workerID)) {
 
 			String username = usermodul.getUser(workerID);
-			message = username + ": " + message;
-			chatserver.setLastMsg(message);
+			message = "public:" + username + ": " + message;
 
 			for (int ID : usermodul.getLoggedinWorkers()) {
 				if (ID != workerID) {
-					synchronized (chatserver.getOpenConnections()) {
-						Worker worker = chatserver.getOpenConnections().get(ID);
-						try {
-							((TCPWorker) worker).getChannel().send(message);
-						} catch (IOException e) {
-							LOGGER.log(Level.SEVERE, "Error sending public message", e);
-						}
+					Worker worker = chatserver.getConnectionByID(ID);
+					try {
+						((TCPWorker) worker).getChannel().send(message);
+					} catch (IOException e) {
+						LOGGER.log(Level.SEVERE, "Error sending public message", e);
 					}
 				}
 			}

@@ -13,8 +13,8 @@ import java.util.concurrent.LinkedBlockingQueue;
  * verification purposes.
  */
 public class TestOutputStream extends PrintStream {
-	private final Queue<String> lines = new LinkedBlockingQueue<>();
-	private volatile StringBuilder line = new StringBuilder();
+	private final    Queue<String> lines = new LinkedBlockingQueue<>();
+	private volatile StringBuilder line  = new StringBuilder();
 	private PrintStream delegate;
 
 	/**
@@ -61,7 +61,7 @@ public class TestOutputStream extends PrintStream {
 		} else if (len == 0) {
 			return;
 		}
-		for (int i = 0 ; i < len ; i++) {
+		for (int i = 0; i < len; i++) {
 			write(b[off + i]);
 		}
 	}
@@ -84,6 +84,7 @@ public class TestOutputStream extends PrintStream {
 	 * Returns a copy of the lines written to the {@link PrintStream} so far and clears the buffer.
 	 *
 	 * @return the written lines
+	 *
 	 * @see #getLines()
 	 * @see #clear()
 	 */
