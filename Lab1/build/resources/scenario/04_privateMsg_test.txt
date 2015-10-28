@@ -1,0 +1,19 @@
+*	Chatserver	chatserver
+*	Client		bill.de
+*	Client		steve.rome.it
+
+bill.de:            !login bill.de 23456
+>					verify(".*Successfully logged in.*", T(test.util.Flag).REGEX)
+
+bill.de:            !register 127.0.0.1:56143
+>					verify(".*Successfully registered address for bill.de.*", T(test.util.Flag).REGEX)
+
+steve.rome.it:      !login steve.rome.it 34567
+>					verify(".*Successfully logged in.*", T(test.util.Flag).REGEX)
+
+steve.rome.it:      !msg bill.de hi!
+>					verify(".*hi!.*", T(test.util.Flag).REGEX)
+
+bill.de:            !exit
+steve.rome.it:      !exit
+chatserver:         !exit

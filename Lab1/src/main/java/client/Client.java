@@ -7,6 +7,7 @@ import cli.Command;
 import cli.Shell;
 import client.communication.PrivateListener;
 import client.communication.PublicListener;
+import client.communication.UDPListener;
 import util.Config;
 
 import java.io.IOException;
@@ -23,8 +24,7 @@ import java.util.logging.LogManager;
 import java.util.logging.Logger;
 
 public class Client implements IClientCli, Runnable {
-	private static final Logger LOGGER         = Logger.getLogger(Client.class.getName());
-	public static        int    WORKER_COUNTER = 0;
+	private static final Logger LOGGER = Logger.getLogger(Client.class.getName());
 
 	private final ExecutorService executor;
 	private final String          componentName;
@@ -39,6 +39,7 @@ public class Client implements IClientCli, Runnable {
 	private Shell           shell;
 	private PublicListener  activListener;
 	private PrivateListener privateListener;
+	private UDPListener     udpListener;
 	private Socket          socket_tcp;
 	private DatagramSocket  socket_udp;
 	private String username = "";
@@ -96,11 +97,14 @@ public class Client implements IClientCli, Runnable {
 			socket_udp = new DatagramSocket();
 
 			this.activListener = new PublicListener(this, socket_tcp, userResponseStream);
+			this.udpListener = new UDPListener(this, socket_udp, userResponseStream, host, port_udp);
+
 			this.channel_tcp = new TCPChannel(socket_tcp);
 			this.channel_udp = new UDPChannel(socket_udp, host, port_udp);
 
 			executor.execute(shell);
 			executor.execute(activListener);
+			executor.execute(udpListener);
 
 		} catch (IOException e) {
 			LOGGER.log(Level.SEVERE, "error openen sockets", e);
@@ -137,7 +141,7 @@ public class Client implements IClientCli, Runnable {
 	@Command
 	public String list() throws IOException {
 		channel_udp.send("list");
-		return channel_udp.receive();
+		return null;
 	}
 
 	@Override
@@ -183,7 +187,6 @@ public class Client implements IClientCli, Runnable {
 				String port = split[1];
 
 				try {
-
 					ServerSocket privateSocket = new ServerSocket(Integer.parseInt(port));
 					privateListener = new PrivateListener(this, privateSocket, userResponseStream, executor);
 					executor.execute(privateListener);
@@ -215,25 +218,25 @@ public class Client implements IClientCli, Runnable {
 		LOGGER.info("shutting down client");
 		try {
 			if (loggedIn) this.logout();
-			channel_tcp.send("quit");
+			if (channel_tcp != null) channel_tcp.send("quit");
 
-			activListener.terminate();
+			if (udpListener != null) udpListener.terminate();
+			if (activListener != null) activListener.terminate();
 			if (privateListener != null) privateListener.terminate();
-			channel_udp.terminate();
-			channel_tcp.terminate();
-			socket_tcp.close();
-			socket_udp.close();
-			shell.close();
+
+			if (channel_udp != null) channel_udp.terminate();
+			if (channel_tcp != null) channel_tcp.terminate();
+			if (socket_tcp != null) socket_tcp.close();
+			if (socket_udp != null) socket_udp.close();
+
+			if (shell != null) shell.close();
+
 			executor.shutdown();
-		} catch (IOException e) {
-			LOGGER.log(Level.SEVERE, "Error closing TCP Socket", e);
+		} catch (IOException ignored) {
 		}
 
 		return "shutdown complete";
 	}
-
-	// --- Commands needed for Lab 2. Please note that you do not have to
-	// implement them for the first submission. ---
 
 	@Override
 	public String authenticate(String username) throws IOException {
@@ -249,6 +252,9 @@ public class Client implements IClientCli, Runnable {
 	public void setLastMsg(String lastMg) {
 		this.lastMg = lastMg;
 	}
+
+	// --- Commands needed for Lab 2. Please note that you do not have to
+	// implement them for the first submission. ---
 
 	public void setLookupError(boolean lookupError) {
 		lookupPerfomed = true;

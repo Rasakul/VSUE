@@ -78,6 +78,7 @@ public class TCPWorker implements Worker {
 		try {
 			LOGGER.info("Stopping TCP Worker " + ID);
 			running = false;
+			channel.send("serverend");
 			channel.terminate();
 			clientSocket.close();
 			chatserver.removeConnection(ID);

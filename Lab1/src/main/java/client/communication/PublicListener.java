@@ -45,10 +45,14 @@ public class PublicListener implements ClientCommunication {
 					} else if (response.contains("public:")) {
 						response = response.replaceFirst("public:", "");
 						client.setLastMsg(response);
+					} else if (response.contains("serverend")) {
+						response = "Server not reachable, shutting down client";
+						running = false;
 					}
 					userResponseStream.println(response);
 				}
 			}
+			client.exit();
 		} catch (IOException e) {
 			if (running) {
 				LOGGER.log(Level.SEVERE, "error communicate with tcp socket", e);
