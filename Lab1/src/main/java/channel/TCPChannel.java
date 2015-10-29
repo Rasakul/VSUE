@@ -36,7 +36,7 @@ public class TCPChannel implements Channel {
 	}
 
 	@Override
-	public void terminate() throws IOException {
+	public void close() throws IOException {
 		//nothing to do
 		LOGGER.info("Shutdown TCP channel");
 	}

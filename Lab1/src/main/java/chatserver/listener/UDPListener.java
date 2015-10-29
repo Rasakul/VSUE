@@ -53,8 +53,7 @@ public class UDPListener implements Serverlistener {
 
 	}
 
-	@Override
-	public void terminate() {
+	public void close() {
 		LOGGER.info("Stopping UDP Listener");
 		running = false;
 		socket.close();

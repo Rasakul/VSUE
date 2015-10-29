@@ -62,8 +62,7 @@ public class TCPListener implements Serverlistener {
 		running = false;
 	}
 
-	@Override
-	public void terminate() {
+	public void close() {
 		try {
 			LOGGER.info("Stopping TCP Listener");
 			running = false;

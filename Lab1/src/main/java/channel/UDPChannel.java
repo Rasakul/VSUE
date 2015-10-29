@@ -44,7 +44,7 @@ public class UDPChannel implements Channel {
 	}
 
 	@Override
-	public void terminate() {
+	public void close() {
 		//nothing to do
 		LOGGER.info("Shutdown UDP channel");
 	}

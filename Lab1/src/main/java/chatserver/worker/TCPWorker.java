@@ -51,7 +51,7 @@ public class TCPWorker implements Worker {
 			while (running) {
 				String input = channel.receive();
 
-				if (input == null || input.equals("quit")) this.terminate();
+				if (input == null || input.equals("quit")) this.close();
 
 				if (running) {
 					LOGGER.fine("Worker " + ID + ": " + input);
@@ -74,12 +74,12 @@ public class TCPWorker implements Worker {
 	}
 
 	@Override
-	public void terminate() {
+	public void close() {
 		try {
 			LOGGER.info("Stopping TCP Worker " + ID);
 			running = false;
 			channel.send("serverend");
-			channel.terminate();
+			channel.close();
 			clientSocket.close();
 			chatserver.removeConnection(ID);
 		} catch (IOException e) {

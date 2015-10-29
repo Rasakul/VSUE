@@ -48,12 +48,11 @@ public class UDPListener implements ClientCommunication {
 	}
 
 	@Override
-	public String terminate() {
+	public void close() {
 		LOGGER.info("closing UDP socket");
 		if (running) {
 			running = false;
-			channel.terminate();
+			channel.close();
 		}
-		return null;
 	}
 }

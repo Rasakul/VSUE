@@ -62,14 +62,13 @@ public class PublicListener implements ClientCommunication {
 	}
 
 	@Override
-	public String terminate() {
+	public void close() {
 		try {
 			LOGGER.info("closing TCP socket");
 			running = false;
-			channel.terminate();
+			channel.close();
 		} catch (IOException e) {
 			LOGGER.log(Level.SEVERE, "error closing tcp socket", e);
 		}
-		return null;
 	}
 }

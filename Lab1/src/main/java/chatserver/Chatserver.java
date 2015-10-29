@@ -102,11 +102,11 @@ public class Chatserver implements IChatserverCli, Runnable {
 		running = false;
 		for (Worker worker : this.openConnections.values()) {
 			if (worker.isRunning()) {
-				worker.terminate();
+				worker.close();
 			}
 		}
-		TCPListener.terminate();
-		UDPListener.terminate();
+		TCPListener.close();
+		UDPListener.close();
 		executor.shutdown();
 		shell.close();
 		return "Stopping server";

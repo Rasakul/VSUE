@@ -43,7 +43,7 @@ public class PrivateListener implements ClientCommunication {
 				String message = channel.receive().replaceFirst(Pattern.quote("msg;"), "");
 				userResponseStream.println(message);
 				channel.send("!ack");
-				channel.terminate();
+				channel.close();
 				clientSocket.close();
 			}
 		} catch (IOException e) {
@@ -61,7 +61,7 @@ public class PrivateListener implements ClientCommunication {
 	}
 
 	@Override
-	public String terminate() {
+	public void close() {
 		try {
 			LOGGER.info("closing TCP socket");
 			running = false;
@@ -69,6 +69,5 @@ public class PrivateListener implements ClientCommunication {
 		} catch (IOException e) {
 			LOGGER.log(Level.SEVERE, "error closing tcp serverSocket", e);
 		}
-		return null;
 	}
 }

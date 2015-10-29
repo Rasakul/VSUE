@@ -58,7 +58,7 @@ public class UDPWorker implements Worker {
 	}
 
 	@Override
-	public void terminate() {
+	public void close() {
 		LOGGER.info("Stopping UDP Worker");
 		running = false;
 		socket.close();

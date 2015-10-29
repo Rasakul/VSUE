@@ -172,6 +172,8 @@ public class Client implements IClientCli, Runnable {
 					Socket socket = new Socket(host, Integer.parseInt(port));
 					TCPChannel channel = new TCPChannel(socket);
 					channel.send("[private] " + username + ": " + message);
+					channel.close();
+					socket.close();
 				}
 			}
 			lookupPerfomed = false;
@@ -190,7 +192,7 @@ public class Client implements IClientCli, Runnable {
 		} else {
 			return "please log in first";
 		}
-		return null;
+		return lookupError ? "lookup error" : lastLookupAdress;
 	}
 
 	@Override
@@ -239,12 +241,12 @@ public class Client implements IClientCli, Runnable {
 			if (loggedIn) this.logout();
 			if (channel_tcp != null) channel_tcp.send("quit");
 
-			if (udpListener != null) udpListener.terminate();
-			if (activListener != null) activListener.terminate();
-			if (privateListener != null) privateListener.terminate();
+			if (udpListener != null) udpListener.close();
+			if (activListener != null) activListener.close();
+			if (privateListener != null) privateListener.close();
 
-			if (channel_udp != null) channel_udp.terminate();
-			if (channel_tcp != null) channel_tcp.terminate();
+			if (channel_udp != null) channel_udp.close();
+			if (channel_tcp != null) channel_tcp.close();
 			if (socket_tcp != null) socket_tcp.close();
 			if (socket_udp != null) socket_udp.close();
 
@@ -257,6 +259,12 @@ public class Client implements IClientCli, Runnable {
 		return "shutdown complete";
 	}
 
+	@Override
+	public String authenticate(String username) throws IOException {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
 	public void setLastLookupAdress(String lastLookupAdress) {
 		lookupPerfomed = true;
 		this.lastLookupAdress = lastLookupAdress;
@@ -266,17 +274,11 @@ public class Client implements IClientCli, Runnable {
 		this.lastMg = lastMg;
 	}
 
-	public void setLookupError(boolean lookupError) {
-		lookupPerfomed = true;
-		this.lookupError = lookupError;
-	}
-
 	// --- Commands needed for Lab 2. Please note that you do not have to
 	// implement them for the first submission. ---
 
-	@Override
-	public String authenticate(String username) throws IOException {
-		// TODO Auto-generated method stub
-		return null;
+	public void setLookupError(boolean lookupError) {
+		lookupPerfomed = true;
+		this.lookupError = lookupError;
 	}
 }
