@@ -35,3 +35,6 @@ out/
 
 #other files
 *.orig
+
+#other dirs
+build/
