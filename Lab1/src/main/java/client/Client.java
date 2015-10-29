@@ -125,15 +125,23 @@ public class Client implements IClientCli, Runnable {
 	@Override
 	@Command
 	public String logout() throws IOException {
-		loggedIn = false;
-		channel_tcp.send("logout;" + username);
+		if (loggedIn) {
+			loggedIn = false;
+			channel_tcp.send("logout;" + username);
+		} else {
+			return "please log in first";
+		}
 		return null;
 	}
 
 	@Override
 	@Command
 	public String send(String message) throws IOException {
-		channel_tcp.send("send;" + message);
+		if (loggedIn) {
+			channel_tcp.send("send;" + message);
+		} else {
+			return "please log in first";
+		}
 		return null;
 	}
 
@@ -147,42 +155,49 @@ public class Client implements IClientCli, Runnable {
 	@Override
 	@Command
 	public String msg(String username, String message) throws IOException {
+		if (loggedIn) {
+			this.lookup(username);
+			while (!lookupPerfomed) {
+				try {
+					Thread.sleep(10);
+				} catch (InterruptedException ignored) {
 
-		this.lookup(username);
-		while (!lookupPerfomed) {
-			try {
-				Thread.sleep(10);
-			} catch (InterruptedException ignored) {
-
+				}
 			}
-		}
-		if (!lookupError) {
-			String[] split = lastLookupAdress.split(":");
-			if (split.length == 2) {
-				String host = split[0];
-				String port = split[1];
-				Socket socket = new Socket(host, Integer.parseInt(port));
-				TCPChannel channel = new TCPChannel(socket);
-				channel.send("[private] " + username + ": " + message);
+			if (!lookupError) {
+				String[] split = lastLookupAdress.split(":");
+				if (split.length == 2) {
+					String host = split[0];
+					String port = split[1];
+					Socket socket = new Socket(host, Integer.parseInt(port));
+					TCPChannel channel = new TCPChannel(socket);
+					channel.send("[private] " + username + ": " + message);
+				}
 			}
+			lookupPerfomed = false;
+			lookupError = false;
+		} else {
+			return "please log in first";
 		}
-		lookupPerfomed = false;
-		lookupError = false;
 		return null;
 	}
 
 	@Override
 	@Command
 	public String lookup(String username) throws IOException {
-		channel_tcp.send("lookup;" + username);
+		if (loggedIn) {
+			channel_tcp.send("lookup;" + username);
+		} else {
+			return "please log in first";
+		}
 		return null;
 	}
 
 	@Override
 	@Command
 	public String register(String privateAddress) throws IOException {
-		String[] split = privateAddress.split(":");
 		if (loggedIn) {
+			String[] split = privateAddress.split(":");
 			if (split.length == 2) {
 				String port = split[1];
 
@@ -209,7 +224,11 @@ public class Client implements IClientCli, Runnable {
 	@Override
 	@Command
 	public String lastMsg() throws IOException {
-		return this.lastMg;
+		if (loggedIn) {
+			return this.lastMg;
+		} else {
+			return "please log in first";
+		}
 	}
 
 	@Override
@@ -238,12 +257,6 @@ public class Client implements IClientCli, Runnable {
 		return "shutdown complete";
 	}
 
-	@Override
-	public String authenticate(String username) throws IOException {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
 	public void setLastLookupAdress(String lastLookupAdress) {
 		lookupPerfomed = true;
 		this.lastLookupAdress = lastLookupAdress;
@@ -253,11 +266,17 @@ public class Client implements IClientCli, Runnable {
 		this.lastMg = lastMg;
 	}
 
-	// --- Commands needed for Lab 2. Please note that you do not have to
-	// implement them for the first submission. ---
-
 	public void setLookupError(boolean lookupError) {
 		lookupPerfomed = true;
 		this.lookupError = lookupError;
+	}
+
+	// --- Commands needed for Lab 2. Please note that you do not have to
+	// implement them for the first submission. ---
+
+	@Override
+	public String authenticate(String username) throws IOException {
+		// TODO Auto-generated method stub
+		return null;
 	}
 }

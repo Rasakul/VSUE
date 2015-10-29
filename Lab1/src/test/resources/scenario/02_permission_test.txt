@@ -11,13 +11,13 @@ steve.rome.it:	    !register 127.0.0.1:56074
 
 
 alice.vienna.at:    !register 127.0.0.1:55074
->					verify(".*Permission denied.*", T(test.util.Flag).REGEX)
+>					verify(".*please log in first.*", T(test.util.Flag).REGEX)
 
 alice.vienna.at:    !logout
 >					verify(".*Unknown username.*", T(test.util.Flag).REGEX)
 
 alice.vienna.at:    !lookup steve.rome.it
->					verify(".*Permission denied.*", T(test.util.Flag).REGEX)
+>					verify(".*please log in first.*", T(test.util.Flag).REGEX)
 
 
 
