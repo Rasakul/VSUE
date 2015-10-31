@@ -1,6 +1,9 @@
 package channel;
 
-import java.io.IOException;
+import channel.util.DataPacket;
+import channel.util.UDPDataPacket;
+
+import java.io.*;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
@@ -24,23 +27,33 @@ public class UDPChannel implements Channel {
 	}
 
 	@Override
-	public void send(String data) throws IOException {
-		LOGGER.fine("sending: " + data);
+	public void send(DataPacket dataPacket) throws IOException {
+		LOGGER.fine("sending: " + dataPacket);
 
-		byte[] data_byte = data.getBytes();
+		ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+		ObjectOutputStream os = new ObjectOutputStream(outputStream);
+		os.writeObject(dataPacket);
+		byte[] data = outputStream.toByteArray();
 
-		DatagramPacket packet_out = new DatagramPacket(data_byte, data_byte.length, InetAddress.getByName(host), port);
+		DatagramPacket packet_out = new DatagramPacket(data, data.length, InetAddress.getByName(host), port);
 		socket.send(packet_out);
 	}
 
 	@Override
-	public String receive() throws IOException {
+	public DataPacket receive() throws IOException, ClassNotFoundException {
 
 		DatagramPacket packet_in = new DatagramPacket(new byte[1024], 1024);
 		socket.receive(packet_in);
-		String response = new String(packet_in.getData()).split("\u0000")[0];
-		LOGGER.fine("receiving: " + response);
-		return response;
+		byte[] data = packet_in.getData();
+
+		ByteArrayInputStream in = new ByteArrayInputStream(data);
+		ObjectInputStream is = new ObjectInputStream(in);
+		DataPacket dataPacket = (DataPacket) is.readObject();
+
+		((UDPDataPacket)dataPacket).setPort(packet_in.getPort());
+		((UDPDataPacket)dataPacket).setHost(packet_in.getAddress().getHostAddress());
+		LOGGER.fine("receiving: " + dataPacket);
+		return dataPacket;
 	}
 
 	@Override

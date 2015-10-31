@@ -1,5 +1,6 @@
 package chatserver.util.operation;
 
+import channel.util.DataPacket;
 import chatserver.Chatserver;
 import chatserver.util.Usermodul;
 
@@ -15,25 +16,25 @@ public class LookupOperation implements Operation {
 	}
 
 	@Override
-	public String process(Integer workerID, String line) {
-		String response;
+	public DataPacket process(Integer workerID, DataPacket income) {
+
 		Usermodul usermodul = chatserver.getUsermodul();
 		if (usermodul.isLogedin(workerID)) {
 			String username;
-			String[] split = line.split(";");
-			if (split.length == 2) {
-				username = split[1];
+
+			if (income.getArguments().size() == 1) {
+				username = income.getArguments().get(0);
 				if (usermodul.isRegisterd(username)) {
-					response = "lookup:" + usermodul.getAdress(username);
+					income.setResponse("lookup:" + usermodul.getAdress(username));
 				} else {
-					response = "lookuperror:User not registered!";
+					income.setResponse("lookuperror:User not registered!");
 				}
 			} else {
-				response = "lookuperror:Invalid command!";
+				income.setResponse("lookuperror:Invalid command!");
 			}
 		} else {
-			response = "lookuperror:Permission denied, user not logged in!";
+			income.setResponse("lookuperror:Permission denied, user not logged in!");
 		}
-		return response;
+		return income;
 	}
 }

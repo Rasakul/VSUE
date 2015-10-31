@@ -1,5 +1,6 @@
 package chatserver.util.operation;
 
+import channel.util.DataPacket;
 import chatserver.Chatserver;
 import chatserver.util.Usermodul;
 
@@ -16,22 +17,21 @@ public class LogoutOperation implements Operation {
 	}
 
 	@Override
-	public String process(Integer workerID, String line) {
+	public DataPacket process(Integer workerID, DataPacket income) {
 
-		String[] split = line.split(";");
-
-		if (split.length == 2) {
-			String username = split[1];
+		if (income.getArguments().size() == 1) {
+			String username = income.getArguments().get(0);
 			Usermodul usermodul = chatserver.getUsermodul();
 
 			if (usermodul.isLogedin(username)) {
 				usermodul.logoutUser(workerID);
 			} else {
-				return ("Error, not logged in");
+				income.setResponse("Error, not logged in");
 			}
-			return ("Successfully logged out.");
+			income.setResponse("Successfully logged out.");
 		} else {
-			return ("Unknown username.");
+			income.setResponse("Unknown username.");
 		}
+		return income;
 	}
 }

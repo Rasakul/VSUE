@@ -1,12 +1,15 @@
 package chatserver.worker;
 
 import channel.TCPChannel;
+import channel.util.DataPacket;
+import channel.util.TCPDataPacket;
 import chatserver.Chatserver;
 import chatserver.util.OperationFactory;
 
 import java.io.IOException;
 import java.io.PrintStream;
 import java.net.Socket;
+import java.net.SocketException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -49,21 +52,23 @@ public class TCPWorker implements Worker {
 			LOGGER.info("New TCP Worker with ID " + ID + "with client " + clienthost + ":" + clientport);
 
 			while (running) {
-				String input = channel.receive();
+				DataPacket dataPacket = channel.receive();
+				String input = dataPacket.getCommand();
 
 				if (input == null || input.equals("quit")) this.close();
 
 				if (running) {
 					LOGGER.fine("Worker " + ID + ": " + input);
-					String response = operationFactory.process(ID, input);
-					channel.send(response);
+					channel.send(operationFactory.process(ID, dataPacket));
 				}
 			}
-		} catch (IOException e) {
-			if (running) LOGGER.log(Level.SEVERE, "Error on TCP Socket", e);
+		} catch (IOException | ClassNotFoundException e) {
+			if (running && !(e instanceof SocketException)) LOGGER.log(Level.SEVERE, "Error on TCP Socket", e);
 		} finally {
 			try {
 				LOGGER.info("Stopping TCP Worker " + ID);
+				chatserver.removeConnection(ID);
+				chatserver.getUsermodul().logoutUser(ID);
 				clientSocket.close();
 				running = false;
 			} catch (IOException e) {
@@ -78,9 +83,10 @@ public class TCPWorker implements Worker {
 		try {
 			LOGGER.info("Stopping TCP Worker " + ID);
 			running = false;
-			channel.send("serverend");
+			channel.send(new TCPDataPacket("serverend"));
 			channel.close();
 			clientSocket.close();
+			chatserver.getUsermodul().logoutUser(ID);
 			chatserver.removeConnection(ID);
 		} catch (IOException e) {
 			LOGGER.log(Level.SEVERE, "Error closing TCP Socket", e);

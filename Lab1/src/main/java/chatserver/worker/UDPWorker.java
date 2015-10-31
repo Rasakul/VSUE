@@ -1,5 +1,8 @@
 package chatserver.worker;
 
+import channel.UDPChannel;
+import channel.util.DataPacket;
+import channel.util.UDPDataPacket;
 import chatserver.Chatserver;
 
 import java.io.IOException;
@@ -16,35 +19,35 @@ public class UDPWorker implements Worker {
 	private static final Logger LOGGER = Logger.getLogger(UDPWorker.class.getName());
 
 	private final Chatserver     chatserver;
-	private final DatagramPacket packet_in;
-	private final PrintStream    userResponseStream;
+	private final UDPDataPacket udp_dataPacket;
 	private final DatagramSocket socket;
+	private final PrintStream    userResponseStream;
+	private final UDPChannel     channel;
+
 
 	private volatile boolean running = true;
 
-	public UDPWorker(Chatserver chatserver, DatagramPacket packet_in, PrintStream userResponseStream,
+	public UDPWorker(Chatserver chatserver, DataPacket dataPacket, PrintStream userResponseStream,
 	                 DatagramSocket socket) {
 		this.chatserver = chatserver;
-		this.packet_in = packet_in;
+		this.udp_dataPacket = (UDPDataPacket) dataPacket;
 		this.userResponseStream = userResponseStream;
 		this.socket = socket;
+		this.channel = new UDPChannel(socket, udp_dataPacket.getHost(), udp_dataPacket.getPort());
 	}
 
 	@Override
 	public void run() {
-		byte[] data = packet_in.getData();
-		String command = new String(data, 0, packet_in.getLength());
+		String command = udp_dataPacket.getCommand();
 
 		LOGGER.fine(
-				"Processing incoming UDP: " + command + " from " + packet_in.getAddress() + ":" + packet_in.getPort());
+				"Processing incoming UDP: " + command + " from " + udp_dataPacket.getHost() + ":" + udp_dataPacket.getPort());
 
 		try {
 
-			byte[] response = (command.equals("list") ? this.getOnlineUsers() : "unknown command").getBytes();
-			DatagramPacket packet_out = new DatagramPacket(response, response.length, packet_in.getAddress(),
-			                                               packet_in.getPort());
-
-			socket.send(packet_out);
+			String response = (command.equals("list") ? this.getOnlineUsers() : "unknown command");
+			UDPDataPacket dataPacket = new UDPDataPacket(response);
+			channel.send(dataPacket);
 
 		} catch (IOException e) {
 			if (running) LOGGER.log(Level.SEVERE, "Error on TCP Socket", e);
@@ -61,6 +64,7 @@ public class UDPWorker implements Worker {
 	public void close() {
 		LOGGER.info("Stopping UDP Worker");
 		running = false;
+		channel.close();
 		socket.close();
 	}
 

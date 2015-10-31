@@ -1,12 +1,15 @@
 package client.communication;
 
 import channel.TCPChannel;
+import channel.util.DataPacket;
+import channel.util.TCPDataPacket;
 import client.Client;
 
 import java.io.IOException;
 import java.io.PrintStream;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.ArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -40,13 +43,21 @@ public class PrivateListener implements ClientCommunication {
 			while (running) {
 				Socket clientSocket = serverSocket.accept();
 				TCPChannel channel = new TCPChannel(clientSocket);
-				String message = channel.receive().replaceFirst(Pattern.quote("msg;"), "");
+				DataPacket dataPacket = channel.receive();
+				String message = dataPacket.getCommand();
 				userResponseStream.println(message);
-				channel.send("!ack");
-				channel.close();
-				clientSocket.close();
+				if(!message.equals("!ack")){
+					dataPacket.setResponse("!ack");
+					channel.send(dataPacket);
+					channel.close();
+					clientSocket.close();
+				} else {
+					client.setPrivateMsgSuccess(true);
+					channel.close();
+					clientSocket.close();
+				}
 			}
-		} catch (IOException e) {
+		} catch (IOException | ClassNotFoundException e) {
 			if (running) LOGGER.log(Level.SEVERE, "Error on TCP Socket", e);
 		} finally {
 			try {

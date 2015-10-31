@@ -1,5 +1,8 @@
 package chatserver.listener;
 
+import channel.Channel;
+import channel.UDPChannel;
+import channel.util.DataPacket;
 import chatserver.Chatserver;
 import chatserver.worker.UDPWorker;
 import chatserver.worker.Worker;
@@ -7,7 +10,6 @@ import util.Config;
 
 import java.io.IOException;
 import java.io.PrintStream;
-import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.util.concurrent.ExecutorService;
 import java.util.logging.Level;
@@ -24,6 +26,7 @@ public class UDPListener implements Serverlistener {
 	private final PrintStream     userResponseStream;
 	private final ExecutorService executor;
 	private       DatagramSocket  socket;
+	private       Channel         channel;
 	private volatile boolean running = true;
 
 	public UDPListener(Chatserver chatserver, Config server_config, PrintStream userResponseStream,
@@ -38,24 +41,29 @@ public class UDPListener implements Serverlistener {
 	public void run() {
 		try {
 			socket = new DatagramSocket(server_config.getInt("udp.port"));
+			this.channel = new UDPChannel(socket, null, null); //crete a channel only for receiving
 			LOGGER.info("UDP is UP!");
 
 			while (running) {
-				DatagramPacket packet = new DatagramPacket(new byte[1024], 1024);
-				socket.receive(packet);
-				Worker worker = new UDPWorker(chatserver, packet, userResponseStream, socket);
+				DataPacket dataPacket = channel.receive();
+				Worker worker = new UDPWorker(chatserver, dataPacket, userResponseStream, socket);
 				executor.execute(worker);
 			}
 
-		} catch (IOException e) {
+		} catch (IOException | ClassNotFoundException e) {
 			if (running) LOGGER.log(Level.SEVERE, "Error on UDP Socket", e);
 		}
 
 	}
 
 	public void close() {
-		LOGGER.info("Stopping UDP Listener");
-		running = false;
-		socket.close();
+		try {
+			LOGGER.info("Stopping UDP Listener");
+			running = false;
+			if (channel != null) channel.close();
+			socket.close();
+		} catch (IOException e) {
+			LOGGER.log(Level.SEVERE, "Error closing UDP Listener", e);
+		}
 	}
 }

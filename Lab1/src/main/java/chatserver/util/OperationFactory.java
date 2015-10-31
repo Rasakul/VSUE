@@ -1,5 +1,7 @@
 package chatserver.util;
 
+import channel.util.DataPacket;
+import channel.util.TCPDataPacket;
 import chatserver.Chatserver;
 import chatserver.util.operation.*;
 
@@ -23,12 +25,14 @@ public class OperationFactory {
 		operationMap.put("lookup", new LookupOperation(chatserver));
 	}
 
-	public String process(Integer workerID, String command) {
-		String response = "";
-		if (command != null && !command.equals("")) {
-			Operation operation = operationMap.get(command.split(";")[0]);
-			if (operation != null) response = operation.process(workerID, command);
-			else response = "operation not supported!";
+	public DataPacket process(Integer workerID, DataPacket income) {
+		DataPacket response = new TCPDataPacket(null, null);
+		if (income.getCommand() != null && !income.getCommand().equals("")) {
+			Operation operation = operationMap.get(income.getCommand());
+			if (operation != null) response = operation.process(workerID, income);
+			else {
+				response.setResponse("operation not supported!");
+			}
 		}
 		return response;
 	}

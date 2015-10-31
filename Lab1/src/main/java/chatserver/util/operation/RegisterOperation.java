@@ -1,5 +1,6 @@
 package chatserver.util.operation;
 
+import channel.util.DataPacket;
 import chatserver.Chatserver;
 import chatserver.util.Usermodul;
 
@@ -15,23 +16,21 @@ public class RegisterOperation implements Operation {
 	}
 
 	@Override
-	public String process(Integer workerID, String line) {
+	public DataPacket process(Integer workerID, DataPacket income) {
 		Usermodul usermodul = chatserver.getUsermodul();
-		String response;
-		String username;
-		String[] split = line.split(";");
+
 		if (usermodul.isLogedin(workerID)) {
-			if (split.length == 2) {
-				String address = split[1];
-				username = usermodul.getUser(workerID);
+			if (income.getArguments().size() == 1) {
+				String address = income.getArguments().get(0);
+				String username = usermodul.getUser(workerID);
 				usermodul.registerUser(username, address);
-				response = "Successfully registered address for " + username;
+				income.setResponse("Successfully registered address for " + username);
 			} else {
-				response = "Invalid command!";
+				income.setResponse("Invalid command!");
 			}
 		} else {
-			response = "Permission denied, user not logged in!";
+			income.setResponse("Permission denied, user not logged in!");
 		}
-		return response;
+		return income;
 	}
 }

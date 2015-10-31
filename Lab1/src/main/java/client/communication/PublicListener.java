@@ -33,7 +33,7 @@ public class PublicListener implements ClientCommunication {
 		try {
 			LOGGER.info("Server TCP listening activ");
 			while (running) {
-				String response = channel.receive();
+				String response = channel.receive().getResponse();
 				if (response != null) {
 
 					if (response.contains("lookuperror:")) {
@@ -52,7 +52,7 @@ public class PublicListener implements ClientCommunication {
 					userResponseStream.println(response);
 				}
 			}
-		} catch (IOException e) {
+		} catch (IOException | ClassNotFoundException e) {
 			if (running) {
 				LOGGER.log(Level.SEVERE, "error communicate with tcp socket", e);
 				userResponseStream.println("Error, server not reachable!");

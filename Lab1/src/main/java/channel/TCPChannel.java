@@ -1,9 +1,10 @@
 package channel;
 
-import java.io.BufferedReader;
+import channel.util.DataPacket;
+
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.util.logging.Logger;
 
@@ -21,16 +22,16 @@ public class TCPChannel implements Channel {
 
 
 	@Override
-	public void send(String data) throws IOException {
+	public void send(DataPacket data) throws IOException {
 		LOGGER.fine("sending: " + data);
-		PrintWriter serverWriter = new PrintWriter(socket.getOutputStream(), true);
-		serverWriter.println(data);
+		ObjectOutputStream outputStream = new ObjectOutputStream(socket.getOutputStream());
+		outputStream.writeObject(data);
 	}
 
 	@Override
-	public String receive() throws IOException {
-		BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-		String response = reader.readLine();
+	public DataPacket receive() throws IOException, ClassNotFoundException {
+		ObjectInputStream inStream = new ObjectInputStream(socket.getInputStream());
+		DataPacket response = (DataPacket) inStream.readObject();
 		LOGGER.fine("receiving: " + response);
 		return response;
 	}

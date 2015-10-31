@@ -35,10 +35,10 @@ public class UDPListener implements ClientCommunication {
 			LOGGER.info("UDP listening activ");
 
 			while (running) {
-				userResponseStream.println(channel.receive());
+				userResponseStream.println(channel.receive().getResponse());
 			}
 
-		} catch (IOException e) {
+		} catch (IOException | ClassNotFoundException e) {
 			if (running) {
 				LOGGER.log(Level.SEVERE, "error communicate with udp socket", e);
 				userResponseStream.println("Error with udp!");

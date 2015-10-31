@@ -1,5 +1,6 @@
 package chatserver.util.operation;
 
+import channel.util.DataPacket;
 import chatserver.Chatserver;
 import chatserver.util.Usermodul;
 
@@ -16,13 +17,11 @@ public class LoginOperation implements Operation {
 	}
 
 	@Override
-	public String process(Integer workerID, String line) {
+	public DataPacket process(Integer workerID, DataPacket income) {
 
-		String[] split = line.split(";");
-
-		if (split.length == 3) {
-			String username = split[1];
-			String password = split[2];
+		if (income.getArguments().size() == 2) {
+			String username = income.getArguments().get(0);
+			String password = income.getArguments().get(1);
 			Usermodul usermodul = chatserver.getUsermodul();
 
 			if (usermodul.checkPassword(username, password)) {
@@ -30,14 +29,15 @@ public class LoginOperation implements Operation {
 				if (!usermodul.isLogedin(username)) {
 					usermodul.loginUser(workerID, username);
 				} else {
-					return ("Error, already logged in");
+					income.setResponse("Error, already logged in");
 				}
-				return ("Successfully logged in.");
+				income.setResponse("Successfully logged in.");
 			} else {
-				return ("Wrong username or password.");
+				income.setResponse("Wrong username or password.");
 			}
 		} else {
-			return ("need username + password");
+			income.setResponse("need username + password");
 		}
+		return income;
 	}
 }
