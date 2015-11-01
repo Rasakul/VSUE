@@ -11,13 +11,15 @@ public abstract class DataPacket implements Serializable {
 	private String       command;
 	private List<String> arguments;
 	private String       response;
+	private boolean      error;
+	private String       errorMsg;
 
 	public DataPacket(String command, List<String> arguments) {
 		this.command = command;
 		this.arguments = arguments;
 	}
 
-	public DataPacket(String response){this.response = response;}
+	public DataPacket(String response) {this.response = response;}
 
 	public String getCommand() {
 		return command;
@@ -43,13 +45,17 @@ public abstract class DataPacket implements Serializable {
 		this.response = response;
 	}
 
-	@Override
-	public String toString() {
-		return "DataPacket{" +
-		       "command='" + command + '\'' +
-		       ", arguments=" + arguments +
-		       ", response='" + response + '\'' +
-		       '}';
+	public boolean hasError() {
+		return error;
+	}
+
+	public void setError(String errorMsg) {
+		this.errorMsg = errorMsg;
+		this.error = true;
+	}
+
+	public String getErrorMsg() {
+		return errorMsg;
 	}
 
 	@Override
@@ -59,9 +65,10 @@ public abstract class DataPacket implements Serializable {
 
 		DataPacket that = (DataPacket) o;
 
-		return command.equals(that.command) &&
+		return error == that.error && command.equals(that.command) &&
 		       !(arguments != null ? !arguments.equals(that.arguments) : that.arguments != null) &&
-		       !(response != null ? !response.equals(that.response) : that.response != null);
+		       !(response != null ? !response.equals(that.response) : that.response != null) &&
+		       !(errorMsg != null ? !errorMsg.equals(that.errorMsg) : that.errorMsg != null);
 
 	}
 
@@ -70,6 +77,20 @@ public abstract class DataPacket implements Serializable {
 		int result = command.hashCode();
 		result = 31 * result + (arguments != null ? arguments.hashCode() : 0);
 		result = 31 * result + (response != null ? response.hashCode() : 0);
+		result = 31 * result + (error ? 1 : 0);
+		result = 31 * result + (errorMsg != null ? errorMsg.hashCode() : 0);
 		return result;
 	}
+
+	@Override
+	public String toString() {
+		return "DataPacket{" +
+		       "command='" + command + '\'' +
+		       ", arguments=" + arguments +
+		       ", response='" + response + '\'' +
+		       ", error=" + error +
+		       ", errorMsg='" + errorMsg + '\'' +
+		       '}';
+	}
+
 }

@@ -7,7 +7,6 @@ import chatserver.Chatserver;
 
 import java.io.IOException;
 import java.io.PrintStream;
-import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -19,7 +18,7 @@ public class UDPWorker implements Worker {
 	private static final Logger LOGGER = Logger.getLogger(UDPWorker.class.getName());
 
 	private final Chatserver     chatserver;
-	private final UDPDataPacket udp_dataPacket;
+	private final UDPDataPacket  udp_dataPacket;
 	private final DatagramSocket socket;
 	private final PrintStream    userResponseStream;
 	private final UDPChannel     channel;
@@ -38,16 +37,20 @@ public class UDPWorker implements Worker {
 
 	@Override
 	public void run() {
-		String command = udp_dataPacket.getCommand();
 
-		LOGGER.fine(
-				"Processing incoming UDP: " + command + " from " + udp_dataPacket.getHost() + ":" + udp_dataPacket.getPort());
+		LOGGER.fine("Processing incoming UDP: " + udp_dataPacket.getCommand() + " from " + udp_dataPacket.getHost() + ":" +
+		            udp_dataPacket.getPort());
 
 		try {
 
-			String response = (command.equals("list") ? this.getOnlineUsers() : "unknown command");
-			UDPDataPacket dataPacket = new UDPDataPacket(response);
-			channel.send(dataPacket);
+			switch (udp_dataPacket.getCommand()) {
+				case "list":
+					udp_dataPacket.setResponse(this.getOnlineUsers());
+					break;
+				default:
+					udp_dataPacket.setError("unknown command");
+			}
+			channel.send(udp_dataPacket);
 
 		} catch (IOException e) {
 			if (running) LOGGER.log(Level.SEVERE, "Error on TCP Socket", e);

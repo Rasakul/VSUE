@@ -1,6 +1,7 @@
 package client.communication;
 
 import channel.TCPChannel;
+import channel.util.DataPacket;
 import client.Client;
 
 import java.io.IOException;
@@ -33,23 +34,42 @@ public class PublicListener implements ClientCommunication {
 		try {
 			LOGGER.info("Server TCP listening activ");
 			while (running) {
-				String response = channel.receive().getResponse();
-				if (response != null) {
+				DataPacket dataPacket = channel.receive();
+				if (dataPacket.getCommand() != null) {
 
-					if (response.contains("lookuperror:")) {
-						response = response.replaceFirst("lookuperror:", "");
-						client.setLookupError(true);
-					} else if (response.contains("lookup:")) {
-						response = response.replaceFirst("lookup:", "");
-						client.setLastLookupAdress(response);
-					} else if (response.contains("public:")) {
-						response = response.replaceFirst("public:", "");
-						client.setLastMsg(response);
-					} else if (response.contains("serverend")) {
-						response = "Server not reachable, please shutt down client";
-						running = false;
+					String response;
+
+					switch (dataPacket.getCommand()) {
+						case "lookup":
+							if (dataPacket.hasError()) {
+								client.setLookupError(true);
+							} else {
+								client.setLastLookupAdress(dataPacket.getResponse());
+							}
+							response = dataPacket.getResponse();
+							break;
+						case "send":
+							client.setLastMsg(dataPacket.getResponse());
+							response = dataPacket.getResponse();
+							break;
+						case "login":
+							client.setLoggedIn(!dataPacket.hasError());
+							response = dataPacket.getResponse();
+							break;
+						case "logout":
+							client.setLoggedIn(!dataPacket.hasError());
+							response = dataPacket.getResponse();
+							break;
+						case "serverend":
+							response = "Server not reachable, please shut down client";
+							running = false;
+							break;
+						default:
+							response = dataPacket.getResponse();
+							break;
 					}
-					userResponseStream.println(response);
+					userResponseStream
+							.println(dataPacket.hasError() ? dataPacket.getErrorMsg() : response);
 				}
 			}
 		} catch (IOException | ClassNotFoundException e) {

@@ -30,22 +30,21 @@ public class PublicMessageOperation implements Operation {
 		if (usermodul.isLogedin(workerID)) {
 			String message = income.getArguments().get(0);
 			String username = usermodul.getUser(workerID);
-			message = "public:" + username + ": " + message;
+			message = username + ": " + message;
 
 			for (int ID : usermodul.getLoggedinWorkers()) {
 				if (ID != workerID) {
-					Worker worker = chatserver.getConnectionByID(ID);
 					try {
+						Worker worker = chatserver.getConnectionByID(ID);
 						income.setResponse(message);
 						((TCPWorker) worker).getChannel().send(income);
-						income.setResponse("");
 					} catch (IOException e) {
 						LOGGER.log(Level.SEVERE, "Error sending public message", e);
 					}
 				}
 			}
 		} else {
-			income.setResponse("Permission denied, user not logged in!");
+			income.setError("Permission denied, user not logged in!");
 		}
 		return income;
 	}

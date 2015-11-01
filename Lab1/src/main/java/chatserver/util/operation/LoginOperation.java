@@ -28,15 +28,15 @@ public class LoginOperation implements Operation {
 
 				if (!usermodul.isLogedin(username)) {
 					usermodul.loginUser(workerID, username);
+					income.setResponse("Successfully logged in.");
 				} else {
-					income.setResponse("Error, already logged in");
+					income.setError("Error, already logged in");
 				}
-				income.setResponse("Successfully logged in.");
 			} else {
-				income.setResponse("Wrong username or password.");
+				income.setError("Wrong username or password.");
 			}
 		} else {
-			income.setResponse("need username + password");
+			income.setError("need username + password");
 		}
 		return income;
 	}

@@ -4,6 +4,9 @@ import channel.util.DataPacket;
 import chatserver.Chatserver;
 import chatserver.util.Usermodul;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+
 /**
  * Created by Lukas on 22.10.2015.
  */
@@ -21,15 +24,20 @@ public class RegisterOperation implements Operation {
 
 		if (usermodul.isLogedin(workerID)) {
 			if (income.getArguments().size() == 1) {
-				String address = income.getArguments().get(0);
-				String username = usermodul.getUser(workerID);
-				usermodul.registerUser(username, address);
-				income.setResponse("Successfully registered address for " + username);
+				try {
+					String address = income.getArguments().get(0);
+					InetAddress.getByName(address);
+					String username = usermodul.getUser(workerID);
+					usermodul.registerUser(username, address);
+					income.setResponse("Successfully registered address for " + username);
+				} catch (UnknownHostException e) {
+					income.setError("invalid host");
+				}
 			} else {
-				income.setResponse("Invalid command!");
+				income.setError("Invalid command!");
 			}
 		} else {
-			income.setResponse("Permission denied, user not logged in!");
+			income.setError("Permission denied, user not logged in!");
 		}
 		return income;
 	}

@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.net.Socket;
 import java.net.SocketException;
+import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -27,7 +28,8 @@ public class TCPWorker implements Worker {
 	private final OperationFactory operationFactory;
 	private final TCPChannel       channel;
 
-	private volatile boolean running = true;
+	private volatile boolean running    = true;
+	private          boolean clientquit = false;
 	private String  clienthost;
 	private Integer clientport;
 
@@ -55,7 +57,10 @@ public class TCPWorker implements Worker {
 				DataPacket dataPacket = channel.receive();
 				String input = dataPacket.getCommand();
 
-				if (input == null || input.equals("quit")) this.close();
+				if (input == null || input.equals("quit")) {
+					clientquit = true;
+					this.close();
+				}
 
 				if (running) {
 					LOGGER.fine("Worker " + ID + ": " + input);
@@ -83,7 +88,7 @@ public class TCPWorker implements Worker {
 		try {
 			LOGGER.info("Stopping TCP Worker " + ID);
 			running = false;
-			channel.send(new TCPDataPacket("serverend"));
+			if (!clientquit) channel.send(new TCPDataPacket("serverend",new ArrayList<String>()));
 			channel.close();
 			clientSocket.close();
 			chatserver.getUsermodul().logoutUser(ID);

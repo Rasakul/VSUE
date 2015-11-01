@@ -126,9 +126,7 @@ public class Client implements IClientCli, Runnable {
 	private void closeTCPServerConnection() throws IOException {
 		LOGGER.info("close TCP connection to server");
 		if (channel_tcp != null) {
-			ArrayList<String> args = new ArrayList<>();
-			UDPDataPacket dataPacket = new UDPDataPacket("quit", args);
-			channel_tcp.send(dataPacket);
+			channel_tcp.send(new TCPDataPacket("quit", new ArrayList<String>()));
 		}
 		if (activListener != null) activListener.close();
 		if (channel_tcp != null) channel_tcp.close();
@@ -150,12 +148,10 @@ public class Client implements IClientCli, Runnable {
 			this.setupTCPServerConnection();
 
 			this.username = username;
-			this.loggedIn = true;
 			ArrayList<String> args = new ArrayList<>();
 			args.add(username);
 			args.add(password);
-			TCPDataPacket dataPacket = new TCPDataPacket("login", args);
-			channel_tcp.send(dataPacket);
+			channel_tcp.send(new TCPDataPacket("login", args));
 		}
 		return null;
 	}
@@ -164,11 +160,9 @@ public class Client implements IClientCli, Runnable {
 	@Command
 	public String logout() throws IOException {
 		if (loggedIn) {
-			loggedIn = false;
 			ArrayList<String> args = new ArrayList<>();
 			args.add(username);
-			TCPDataPacket dataPacket = new TCPDataPacket("logout", args);
-			channel_tcp.send(dataPacket);
+			channel_tcp.send(new TCPDataPacket("logout", args));
 			this.closeTCPServerConnection();
 		} else {
 			return "please log in first";
@@ -182,8 +176,7 @@ public class Client implements IClientCli, Runnable {
 		if (loggedIn) {
 			ArrayList<String> args = new ArrayList<>();
 			args.add(message);
-			TCPDataPacket dataPacket = new TCPDataPacket("send", args);
-			channel_tcp.send(dataPacket);
+			channel_tcp.send(new TCPDataPacket("send", args));
 		} else {
 			return "please log in first";
 		}
@@ -193,9 +186,7 @@ public class Client implements IClientCli, Runnable {
 	@Override
 	@Command
 	public String list() throws IOException {
-		ArrayList<String> args = new ArrayList<>();
-		UDPDataPacket dataPacket = new UDPDataPacket("list", args);
-		channel_udp.send(dataPacket);
+		channel_udp.send(new UDPDataPacket("list", new ArrayList<String>()));
 		return null;
 	}
 
@@ -244,8 +235,7 @@ public class Client implements IClientCli, Runnable {
 		if (loggedIn) {
 			ArrayList<String> args = new ArrayList<>();
 			args.add(username);
-			UDPDataPacket dataPacket = new UDPDataPacket("lookup", args);
-			channel_tcp.send(dataPacket);
+			channel_tcp.send(new TCPDataPacket("lookup", args));
 		} else {
 			return "please log in first";
 		}
@@ -267,8 +257,7 @@ public class Client implements IClientCli, Runnable {
 
 					ArrayList<String> args = new ArrayList<>();
 					args.add(privateAddress);
-					UDPDataPacket dataPacket = new UDPDataPacket("register", args);
-					channel_tcp.send(dataPacket);
+					channel_tcp.send(new TCPDataPacket("register", args));
 
 				} catch (IOException e) {
 					userResponseStream.println("Error with address: " + e.getMessage());
@@ -327,6 +316,9 @@ public class Client implements IClientCli, Runnable {
 		this.lastMg = lastMg;
 	}
 
+	public void setLoggedIn(boolean loggedIn) {
+		this.loggedIn = loggedIn;
+	}
 
 	public void setLookupError(boolean lookupError) {
 		lookupPerfomed = true;

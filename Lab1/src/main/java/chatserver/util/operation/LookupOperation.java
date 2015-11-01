@@ -25,15 +25,15 @@ public class LookupOperation implements Operation {
 			if (income.getArguments().size() == 1) {
 				username = income.getArguments().get(0);
 				if (usermodul.isRegisterd(username)) {
-					income.setResponse("lookup:" + usermodul.getAdress(username));
+					income.setResponse(usermodul.getAdress(username));
 				} else {
-					income.setResponse("lookuperror:User not registered!");
+					income.setError("User not registered!");
 				}
 			} else {
-				income.setResponse("lookuperror:Invalid command!");
+				income.setError("Invalid command!");
 			}
 		} else {
-			income.setResponse("lookuperror:Permission denied, user not logged in!");
+			income.setError("Permission denied, user not logged in!");
 		}
 		return income;
 	}

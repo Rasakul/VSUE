@@ -25,12 +25,12 @@ public class LogoutOperation implements Operation {
 
 			if (usermodul.isLogedin(username)) {
 				usermodul.logoutUser(workerID);
+				income.setResponse("Successfully logged out.");
 			} else {
-				income.setResponse("Error, not logged in");
+				income.setError("Error, not logged in");
 			}
-			income.setResponse("Successfully logged out.");
 		} else {
-			income.setResponse("Unknown username.");
+			income.setError("Unknown username.");
 		}
 		return income;
 	}
