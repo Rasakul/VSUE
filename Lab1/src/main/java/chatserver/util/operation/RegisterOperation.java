@@ -4,8 +4,7 @@ import channel.util.DataPacket;
 import chatserver.Chatserver;
 import chatserver.util.Usermodul;
 
-import java.net.InetAddress;
-import java.net.UnknownHostException;
+import java.util.regex.Pattern;
 
 /**
  * Created by Lukas on 22.10.2015.
@@ -13,6 +12,8 @@ import java.net.UnknownHostException;
 public class RegisterOperation implements Operation {
 
 	private final Chatserver chatserver;
+	private static final Pattern PATTERN = Pattern
+			.compile("^(([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\.){3}([01]?\\d\\d?|2[0-4]\\d|25[0-5])$");
 
 	public RegisterOperation(Chatserver chatserver) {
 		this.chatserver = chatserver;
@@ -24,13 +25,14 @@ public class RegisterOperation implements Operation {
 
 		if (usermodul.isLogedin(workerID)) {
 			if (income.getArguments().size() == 1) {
-				try {
-					String address = income.getArguments().get(0);
-					InetAddress.getByName(address);
+				String address = income.getArguments().get(0);
+				String[] split = address.split(":");
+				if (split[0] != null && PATTERN.matcher(split[0]).matches()) {
 					String username = usermodul.getUser(workerID);
 					usermodul.registerUser(username, address);
 					income.setResponse("Successfully registered address for " + username);
-				} catch (UnknownHostException e) {
+
+				} else {
 					income.setError("invalid host");
 				}
 			} else {

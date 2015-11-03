@@ -43,6 +43,7 @@ public class PublicMessageOperation implements Operation {
 					}
 				}
 			}
+			income.setResponse("");
 		} else {
 			income.setError("Permission denied, user not logged in!");
 		}

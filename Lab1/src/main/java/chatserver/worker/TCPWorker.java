@@ -88,9 +88,9 @@ public class TCPWorker implements Worker {
 		try {
 			LOGGER.info("Stopping TCP Worker " + ID);
 			running = false;
-			if (!clientquit) channel.send(new TCPDataPacket("serverend",new ArrayList<String>()));
+			if (!clientquit) channel.send(new TCPDataPacket("serverend", new ArrayList<String>()));
 			channel.close();
-			clientSocket.close();
+			if (clientSocket != null) clientSocket.close();
 			chatserver.getUsermodul().logoutUser(ID);
 			chatserver.removeConnection(ID);
 		} catch (IOException e) {

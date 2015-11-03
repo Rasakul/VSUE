@@ -1,6 +1,7 @@
 package client.communication;
 
 import channel.UDPChannel;
+import channel.util.DataPacket;
 import client.Client;
 
 import java.io.IOException;
@@ -35,7 +36,8 @@ public class UDPListener implements ClientCommunication {
 			LOGGER.info("UDP listening activ");
 
 			while (running) {
-				userResponseStream.println(channel.receive().getResponse());
+				DataPacket dataPacket = channel.receive();
+				userResponseStream.println(dataPacket.getResponse());
 			}
 
 		} catch (IOException | ClassNotFoundException e) {

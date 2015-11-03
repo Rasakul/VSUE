@@ -49,7 +49,7 @@ public class PublicListener implements ClientCommunication {
 							response = dataPacket.getResponse();
 							break;
 						case "send":
-							client.setLastMsg(dataPacket.getResponse());
+							if (dataPacket.getResponse() != null) client.setLastMsg(dataPacket.getResponse());
 							response = dataPacket.getResponse();
 							break;
 						case "login":
@@ -57,19 +57,29 @@ public class PublicListener implements ClientCommunication {
 							response = dataPacket.getResponse();
 							break;
 						case "logout":
-							client.setLoggedIn(!dataPacket.hasError());
+							client.setLoggedIn(dataPacket.hasError());
+							response = dataPacket.getResponse();
+							break;
+						case "register":
+							client.setRegisterError(dataPacket.hasError());
+							client.setRegisterSuccess(!dataPacket.hasError());
 							response = dataPacket.getResponse();
 							break;
 						case "serverend":
 							response = "Server not reachable, please shut down client";
 							running = false;
+							client.setServerdown(true);
 							break;
 						default:
 							response = dataPacket.getResponse();
 							break;
 					}
-					userResponseStream
-							.println(dataPacket.hasError() ? dataPacket.getErrorMsg() : response);
+
+					if (dataPacket.hasError()) {
+						userResponseStream.println(dataPacket.getErrorMsg());
+					} else if (response != null) {
+						userResponseStream.println(response);
+					}
 				}
 			}
 		} catch (IOException | ClassNotFoundException e) {
@@ -77,6 +87,7 @@ public class PublicListener implements ClientCommunication {
 				LOGGER.log(Level.SEVERE, "error communicate with tcp socket", e);
 				userResponseStream.println("Error, server not reachable!");
 				running = false;
+				client.setServerdown(true);
 			}
 		}
 	}

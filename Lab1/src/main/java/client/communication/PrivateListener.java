@@ -2,18 +2,15 @@ package client.communication;
 
 import channel.TCPChannel;
 import channel.util.DataPacket;
-import channel.util.TCPDataPacket;
 import client.Client;
 
 import java.io.IOException;
 import java.io.PrintStream;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.ArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.regex.Pattern;
 
 /**
  * Created by Lukas on 22.10.2015.
@@ -52,7 +49,6 @@ public class PrivateListener implements ClientCommunication {
 					channel.close();
 					clientSocket.close();
 				} else {
-					client.setPrivateMsgSuccess(true);
 					channel.close();
 					clientSocket.close();
 				}

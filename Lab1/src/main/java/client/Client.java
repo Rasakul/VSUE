@@ -36,7 +36,10 @@ public class Client implements IClientCli, Runnable {
 	private final    Integer         port_udp;
 	private          String          lastLookupAdress;
 	private volatile boolean         lookupPerfomed;
-	private volatile boolean         privateMsgSuccess;
+	private volatile boolean         registerSuccess;
+	private volatile boolean         registerError;
+	private volatile boolean         loggedIn;
+	private volatile boolean         serverdown;
 	private boolean lookupError = false;
 	private Channel         channel_tcp;
 	private Channel         channel_udp;
@@ -47,7 +50,6 @@ public class Client implements IClientCli, Runnable {
 	private Socket          socket_tcp;
 	private DatagramSocket  socket_udp;
 	private String username = "";
-	private volatile boolean loggedIn;
 
 	private Config      config;
 	private InputStream userRequestStream;
@@ -115,7 +117,7 @@ public class Client implements IClientCli, Runnable {
 		executor.execute(activListener);
 	}
 
-	private void setupUDPServerConnection() throws IOException{
+	private void setupUDPServerConnection() throws IOException {
 		LOGGER.info("set up UDP connection to server");
 		socket_udp = new DatagramSocket();
 		this.udpListener = new UDPListener(this, socket_udp, userResponseStream, host, port_udp);
@@ -125,7 +127,7 @@ public class Client implements IClientCli, Runnable {
 
 	private void closeTCPServerConnection() throws IOException {
 		LOGGER.info("close TCP connection to server");
-		if (channel_tcp != null) {
+		if (channel_tcp != null && !serverdown) {
 			channel_tcp.send(new TCPDataPacket("quit", new ArrayList<String>()));
 		}
 		if (activListener != null) activListener.close();
@@ -135,15 +137,15 @@ public class Client implements IClientCli, Runnable {
 
 	private void closeUDPServerConnection() throws IOException {
 		LOGGER.info("close UDP connection to server");
-		if (udpListener != null) udpListener.close();
 		if (channel_udp != null) channel_udp.close();
+		if (udpListener != null) udpListener.close();
 		if (socket_udp != null) socket_udp.close();
 	}
 
 	@Override
 	@Command
 	public String login(String username, String password) throws IOException {
-		if (!loggedIn) {
+		if (!loggedIn && !serverdown) {
 
 			this.setupTCPServerConnection();
 
@@ -159,10 +161,13 @@ public class Client implements IClientCli, Runnable {
 	@Override
 	@Command
 	public String logout() throws IOException {
-		if (loggedIn) {
+		if (loggedIn && !serverdown) {
 			ArrayList<String> args = new ArrayList<>();
 			args.add(username);
 			channel_tcp.send(new TCPDataPacket("logout", args));
+			while (loggedIn && !serverdown) {
+
+			}
 			this.closeTCPServerConnection();
 		} else {
 			return "please log in first";
@@ -173,7 +178,7 @@ public class Client implements IClientCli, Runnable {
 	@Override
 	@Command
 	public String send(String message) throws IOException {
-		if (loggedIn) {
+		if (loggedIn && !serverdown) {
 			ArrayList<String> args = new ArrayList<>();
 			args.add(message);
 			channel_tcp.send(new TCPDataPacket("send", args));
@@ -193,9 +198,9 @@ public class Client implements IClientCli, Runnable {
 	@Override
 	@Command
 	public String msg(String username, String message) throws IOException {
-		if (loggedIn) {
+		if (loggedIn && !serverdown) {
 			this.lookup(username);
-			while (!lookupPerfomed) {
+			while (!lookupPerfomed && !serverdown) {
 				//do nothing
 			}
 			if (!lookupError) {
@@ -213,7 +218,7 @@ public class Client implements IClientCli, Runnable {
 						dataPacket = channel.receive();
 						String response = dataPacket.getResponse();
 						userResponseStream.println(response);
-						privateMsgSuccess = false;
+						registerSuccess = false;
 						channel.close();
 						socket.close();
 					} catch (IOException | ClassNotFoundException e) {
@@ -232,7 +237,7 @@ public class Client implements IClientCli, Runnable {
 	@Override
 	@Command
 	public String lookup(String username) throws IOException {
-		if (loggedIn) {
+		if (loggedIn && !serverdown) {
 			ArrayList<String> args = new ArrayList<>();
 			args.add(username);
 			channel_tcp.send(new TCPDataPacket("lookup", args));
@@ -245,29 +250,37 @@ public class Client implements IClientCli, Runnable {
 	@Override
 	@Command
 	public String register(String privateAddress) throws IOException {
-		if (loggedIn) {
-			String[] split = privateAddress.split(":");
-			if (split.length == 2) {
-				String port = split[1];
+		if(!registerSuccess) {
+			if (loggedIn && !serverdown) {
+				String[] split = privateAddress.split(":");
+				if (split.length == 2) {
+					String port = split[1];
 
-				try {
-					ServerSocket privateSocket = new ServerSocket(Integer.parseInt(port));
-					privateListener = new PrivateListener(this, privateSocket, userResponseStream, executor);
-					executor.execute(privateListener);
+					try {
+						ArrayList<String> args = new ArrayList<>();
+						args.add(privateAddress);
+						channel_tcp.send(new TCPDataPacket("register", args));
 
-					ArrayList<String> args = new ArrayList<>();
-					args.add(privateAddress);
-					channel_tcp.send(new TCPDataPacket("register", args));
+						while (!registerError && !registerSuccess && !serverdown) {
 
-				} catch (IOException e) {
-					userResponseStream.println("Error with address: " + e.getMessage());
+						}
+						if (registerSuccess) {
+							ServerSocket privateSocket = new ServerSocket(Integer.parseInt(port));
+							privateListener = new PrivateListener(this, privateSocket, userResponseStream, executor);
+							executor.execute(privateListener);
+						}
+					} catch (IOException e) {
+						userResponseStream.println("Error with address: " + e.getMessage());
+					}
+				} else {
+					LOGGER.log(Level.SEVERE, "wrong format: " + privateAddress);
+					return "wrong format! need IP:Port";
 				}
 			} else {
-				LOGGER.log(Level.SEVERE, "wrong format: " + privateAddress);
-				return "wrong format! need IP:Port";
+				return "Permission denied, user not logged in!";
 			}
 		} else {
-			return "Permission denied, user not logged in!";
+			return "already registered!";
 		}
 		return null;
 	}
@@ -275,7 +288,7 @@ public class Client implements IClientCli, Runnable {
 	@Override
 	@Command
 	public String lastMsg() throws IOException {
-		if (loggedIn) {
+		if (loggedIn && !serverdown) {
 			return this.lastMg;
 		} else {
 			return "please log in first";
@@ -287,7 +300,7 @@ public class Client implements IClientCli, Runnable {
 	public String exit() {
 		LOGGER.info("shutting down client");
 		try {
-			if (loggedIn) this.logout();
+			if (loggedIn && !serverdown) this.logout();
 			if (privateListener != null) privateListener.close();
 			this.closeUDPServerConnection();
 			if (shell != null) shell.close();
@@ -325,7 +338,15 @@ public class Client implements IClientCli, Runnable {
 		this.lookupError = lookupError;
 	}
 
-	public void setPrivateMsgSuccess(boolean privateMsgSuccess) {
-		this.privateMsgSuccess = privateMsgSuccess;
+	public void setRegisterSuccess(boolean registerSuccess) {
+		this.registerSuccess = registerSuccess;
+	}
+
+	public void setServerdown(boolean serverdown) {
+		this.serverdown = serverdown;
+	}
+
+	public void setRegisterError(boolean registerError) {
+		this.registerError = registerError;
 	}
 }

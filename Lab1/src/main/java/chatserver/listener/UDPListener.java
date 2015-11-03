@@ -10,6 +10,7 @@ import util.Config;
 
 import java.io.IOException;
 import java.io.PrintStream;
+import java.net.BindException;
 import java.net.DatagramSocket;
 import java.util.concurrent.ExecutorService;
 import java.util.logging.Level;
@@ -50,6 +51,8 @@ public class UDPListener implements Serverlistener {
 				executor.execute(worker);
 			}
 
+		} catch (BindException e) {
+			userResponseStream.println("Error, another server use my ports! Please shut down");
 		} catch (IOException | ClassNotFoundException e) {
 			if (running) LOGGER.log(Level.SEVERE, "Error on UDP Socket", e);
 		}
@@ -61,7 +64,7 @@ public class UDPListener implements Serverlistener {
 			LOGGER.info("Stopping UDP Listener");
 			running = false;
 			if (channel != null) channel.close();
-			socket.close();
+			if (socket != null) socket.close();
 		} catch (IOException e) {
 			LOGGER.log(Level.SEVERE, "Error closing UDP Listener", e);
 		}

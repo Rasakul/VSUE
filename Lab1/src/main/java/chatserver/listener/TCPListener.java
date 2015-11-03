@@ -6,6 +6,7 @@ import util.Config;
 
 import java.io.IOException;
 import java.io.PrintStream;
+import java.net.BindException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.concurrent.ExecutorService;
@@ -48,12 +49,14 @@ public class TCPListener implements Serverlistener {
 				chatserver.addConnection(id, worker_tcp);
 				executor.execute(worker_tcp);
 			}
+		} catch (BindException e){
+			userResponseStream.println("Error, another server use my ports! Please shut down");
 		} catch (IOException e) {
 			if (running) LOGGER.log(Level.SEVERE, "Error on TCP Socket", e);
 		} finally {
 			try {
 				LOGGER.info("Stopping TCP Listener");
-				server_socket.close();
+				if (server_socket != null) server_socket.close();
 				running = false;
 			} catch (IOException e) {
 				LOGGER.log(Level.SEVERE, "Error closing TCP Socket", e);
