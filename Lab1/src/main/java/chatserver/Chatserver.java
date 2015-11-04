@@ -26,7 +26,6 @@ public class Chatserver implements IChatserverCli, Runnable {
 
 	private String         componentName;
 	private Config         server_config;
-	private InputStream    userRequestStream;
 	private PrintStream    userResponseStream;
 	private Serverlistener TCPListener;
 	private Serverlistener UDPListener;
@@ -34,8 +33,6 @@ public class Chatserver implements IChatserverCli, Runnable {
 	private Usermodul      usermodul;
 
 	private ExecutorService executor;
-
-	private boolean running = true;
 
 	private Hashtable<Integer, Worker> openConnections;
 
@@ -49,7 +46,6 @@ public class Chatserver implements IChatserverCli, Runnable {
 	                  PrintStream userResponseStream) {
 		this.componentName = componentName;
 		this.server_config = server_config;
-		this.userRequestStream = userRequestStream;
 		this.userResponseStream = userResponseStream;
 
 		openConnections = new Hashtable<>();
@@ -99,7 +95,6 @@ public class Chatserver implements IChatserverCli, Runnable {
 	@Command
 	public String exit() throws IOException {
 		LOGGER.info("Shutting down " + componentName);
-		running = false;
 		for (Worker worker : this.openConnections.values()) {
 			if (worker.isRunning()) {
 				worker.close();
@@ -112,10 +107,28 @@ public class Chatserver implements IChatserverCli, Runnable {
 		return "Stopping server";
 	}
 
+	/**
+	 * register a new open connection
+	 *
+	 * @param ID     new worker ID
+	 * @param worker worker who holds the connection
+	 */
 	public synchronized void addConnection(Integer ID, Worker worker) {openConnections.put(ID, worker); }
 
+	/**
+	 * remove an open connection
+	 *
+	 * @param ID ID of the worker who holds the connection
+	 */
 	public synchronized void removeConnection(Integer ID) {openConnections.remove(ID); }
 
+	/**
+	 * get the connection by the ID of the worker who holds it
+	 *
+	 * @param ID of the worker who holds the connection
+	 *
+	 * @return the worker who holds the connection
+	 */
 	public synchronized Worker getConnectionByID(Integer ID) {return openConnections.get(ID);}
 
 	public Usermodul getUsermodul() {return usermodul; }

@@ -43,7 +43,7 @@ public class PrivateListener implements ClientCommunication {
 				DataPacket dataPacket = channel.receive();
 				String message = dataPacket.getCommand();
 				userResponseStream.println(message);
-				if(!message.equals("!ack")){
+				if (!message.equals("!ack")) {
 					dataPacket.setResponse("!ack");
 					channel.send(dataPacket);
 					channel.close();

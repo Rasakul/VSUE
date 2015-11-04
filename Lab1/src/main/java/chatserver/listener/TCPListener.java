@@ -14,7 +14,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Created by Lukas on 16.10.2015.
+ * Class for the listening on a blocking TCP socket in a multithreading server
  */
 public class TCPListener implements Serverlistener {
 	private static final Logger LOGGER = Logger.getLogger(TCPListener.class.getName());
@@ -49,7 +49,7 @@ public class TCPListener implements Serverlistener {
 				chatserver.addConnection(id, worker_tcp);
 				executor.execute(worker_tcp);
 			}
-		} catch (BindException e){
+		} catch (BindException e) {
 			userResponseStream.println("Error, another server use my ports! Please shut down");
 		} catch (IOException e) {
 			if (running) LOGGER.log(Level.SEVERE, "Error on TCP Socket", e);

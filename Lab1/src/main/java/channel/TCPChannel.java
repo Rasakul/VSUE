@@ -1,6 +1,7 @@
 package channel;
 
 import channel.util.DataPacket;
+import channel.util.TCPDataPacket;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -9,7 +10,7 @@ import java.net.Socket;
 import java.util.logging.Logger;
 
 /**
- * Created by Lukas on 19.10.2015.
+ * Implementation of the {@link Channel} interface for abstraction the communication over a TCP socket
  */
 public class TCPChannel implements Channel {
 	private static final Logger LOGGER = Logger.getLogger(TCPChannel.class.getName());
@@ -31,7 +32,7 @@ public class TCPChannel implements Channel {
 	@Override
 	public DataPacket receive() throws IOException, ClassNotFoundException {
 		ObjectInputStream inStream = new ObjectInputStream(socket.getInputStream());
-		DataPacket response = (DataPacket) inStream.readObject();
+		DataPacket response = (TCPDataPacket) inStream.readObject();
 		LOGGER.fine("receiving: " + response);
 		return response;
 	}

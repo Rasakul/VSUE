@@ -11,7 +11,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Created by Lukas on 21.10.2015.
+ * Send a message to all logged in users, if the requesting user is logged in
  */
 public class PublicMessageOperation implements Operation {
 	private static final Logger LOGGER = Logger.getLogger(PublicMessageOperation.class.getName());
@@ -27,12 +27,12 @@ public class PublicMessageOperation implements Operation {
 	public DataPacket process(Integer workerID, DataPacket income) {
 		Usermodul usermodul = chatserver.getUsermodul();
 
-		if (usermodul.isLogedin(workerID)) {
+		if (usermodul.isLoggedIn(workerID)) {
 			String message = income.getArguments().get(0);
 			String username = usermodul.getUser(workerID);
 			message = username + ": " + message;
 
-			for (int ID : usermodul.getLoggedinWorkers()) {
+			for (int ID : usermodul.getLoggedInWorkers()) {
 				if (ID != workerID) {
 					try {
 						Worker worker = chatserver.getConnectionByID(ID);

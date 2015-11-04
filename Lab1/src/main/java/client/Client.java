@@ -29,18 +29,18 @@ import java.util.logging.Logger;
 public class Client implements IClientCli, Runnable {
 	private static final Logger LOGGER = Logger.getLogger(Client.class.getName());
 
-	private final    ExecutorService executor;
-	private final    String          componentName;
-	private final    String          host;
-	private final    Integer         port_tcp;
-	private final    Integer         port_udp;
-	private          String          lastLookupAdress;
-	private volatile boolean         lookupPerfomed;
-	private volatile boolean         registerSuccess;
-	private volatile boolean         registerError;
-	private volatile boolean         loggedIn;
-	private volatile boolean         serverdown;
-	private boolean lookupError = false;
+	private final ExecutorService executor;
+	private final String          componentName;
+	private final String          host;
+	private final Integer         port_tcp;
+	private final Integer         port_udp;
+	private       String          lastLookupAdress;
+	private volatile boolean lookupPerfomed  = false;
+	private volatile boolean registerSuccess = false;
+	private volatile boolean registerError   = false;
+	private volatile boolean loggedIn        = false;
+	private volatile boolean serverdown      = false;
+	private volatile boolean lookupError     = false;
 	private Channel         channel_tcp;
 	private Channel         channel_udp;
 	private Shell           shell;
@@ -51,8 +51,6 @@ public class Client implements IClientCli, Runnable {
 	private DatagramSocket  socket_udp;
 	private String username = "";
 
-	private Config      config;
-	private InputStream userRequestStream;
 	private PrintStream userResponseStream;
 	private String lastMg = "No message received!";
 
@@ -64,8 +62,6 @@ public class Client implements IClientCli, Runnable {
 	 */
 	public Client(String componentName, Config config, InputStream userRequestStream, PrintStream userResponseStream) {
 		this.componentName = componentName;
-		this.config = config;
-		this.userRequestStream = userRequestStream;
 		this.userResponseStream = userResponseStream;
 
 		this.executor = Executors.newCachedThreadPool();
@@ -250,7 +246,7 @@ public class Client implements IClientCli, Runnable {
 	@Override
 	@Command
 	public String register(String privateAddress) throws IOException {
-		if(!registerSuccess) {
+		if (!registerSuccess) {
 			if (loggedIn && !serverdown) {
 				String[] split = privateAddress.split(":");
 				if (split.length == 2) {

@@ -3,7 +3,7 @@ package chatserver.worker;
 import java.io.Closeable;
 
 /**
- * Created by Lukas on 16.10.2015.
+ * Process the incoming socket of the corresponding listener and manage and communicate with it
  */
 public interface Worker extends Runnable, Closeable {
 

@@ -10,7 +10,7 @@ import java.net.InetAddress;
 import java.util.logging.Logger;
 
 /**
- * Created by Lukas on 19.10.2015.
+ * Implementation of the {@link Channel} interface for abstraction the communication over a UDP socket
  */
 public class UDPChannel implements Channel {
 	private static final Logger LOGGER = Logger.getLogger(UDPChannel.class.getName());
@@ -48,10 +48,10 @@ public class UDPChannel implements Channel {
 
 		ByteArrayInputStream in = new ByteArrayInputStream(data);
 		ObjectInputStream is = new ObjectInputStream(in);
-		DataPacket dataPacket = (DataPacket) is.readObject();
+		UDPDataPacket dataPacket = (UDPDataPacket) is.readObject();
 
-		((UDPDataPacket)dataPacket).setPort(packet_in.getPort());
-		((UDPDataPacket)dataPacket).setHost(packet_in.getAddress().getHostAddress());
+		dataPacket.setPort(packet_in.getPort());
+		dataPacket.setHost(packet_in.getAddress().getHostAddress());
 		LOGGER.fine("receiving: " + dataPacket);
 		return dataPacket;
 	}

@@ -12,7 +12,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Created by Lukas on 16.10.2015.
+ * Process the incoming UDP socket of the corresponding listener and manage and communicate with it
  */
 public class UDPWorker implements Worker {
 	private static final Logger LOGGER = Logger.getLogger(UDPWorker.class.getName());
@@ -38,8 +38,9 @@ public class UDPWorker implements Worker {
 	@Override
 	public void run() {
 
-		LOGGER.fine("Processing incoming UDP: " + udp_dataPacket.getCommand() + " from " + udp_dataPacket.getHost() + ":" +
-		            udp_dataPacket.getPort());
+		LOGGER.fine(
+				"Processing incoming UDP: " + udp_dataPacket.getCommand() + " from " + udp_dataPacket.getHost() + ":" +
+				udp_dataPacket.getPort());
 
 		try {
 
@@ -68,7 +69,7 @@ public class UDPWorker implements Worker {
 		LOGGER.info("Stopping UDP Worker");
 		running = false;
 		channel.close();
-		if (socket != null)socket.close();
+		if (socket != null) socket.close();
 	}
 
 	@Override

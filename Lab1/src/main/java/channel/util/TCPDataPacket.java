@@ -3,10 +3,9 @@ package channel.util;
 import java.util.List;
 
 /**
- * Created by Lukas on 19.10.2015.
+ * Abstract DTO class for the communication over a TCP socket
  */
 public class TCPDataPacket extends DataPacket {
-
 	public TCPDataPacket(String command, List<String> arguments) {
 		super(command, arguments);
 	}

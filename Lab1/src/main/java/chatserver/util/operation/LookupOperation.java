@@ -5,7 +5,7 @@ import chatserver.Chatserver;
 import chatserver.util.Usermodul;
 
 /**
- * Created by Lukas on 22.10.2015.
+ * respond the registered address of an user, if the arguments are valid, the user is logged and the requested user is registered
  */
 public class LookupOperation implements Operation {
 	private final Chatserver chatserver;
@@ -19,7 +19,7 @@ public class LookupOperation implements Operation {
 	public DataPacket process(Integer workerID, DataPacket income) {
 
 		Usermodul usermodul = chatserver.getUsermodul();
-		if (usermodul.isLogedin(workerID)) {
+		if (usermodul.isLoggedIn(workerID)) {
 			String username;
 
 			if (income.getArguments().size() == 1) {

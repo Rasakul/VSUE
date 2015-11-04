@@ -17,7 +17,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Created by Lukas on 16.10.2015.
+ * Class for the listening on a blocking UDP socket in a multithreading server
  */
 public class UDPListener implements Serverlistener {
 	private static final Logger LOGGER = Logger.getLogger(UDPListener.class.getName());

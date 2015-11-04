@@ -7,13 +7,13 @@ import chatserver.util.Usermodul;
 import java.util.regex.Pattern;
 
 /**
- * Created by Lukas on 22.10.2015.
+ * Register a address for a user, if the address is valid
  */
 public class RegisterOperation implements Operation {
 
-	private final Chatserver chatserver;
 	private static final Pattern PATTERN = Pattern
 			.compile("^(([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\.){3}([01]?\\d\\d?|2[0-4]\\d|25[0-5])$");
+	private final Chatserver chatserver;
 
 	public RegisterOperation(Chatserver chatserver) {
 		this.chatserver = chatserver;
@@ -23,7 +23,7 @@ public class RegisterOperation implements Operation {
 	public DataPacket process(Integer workerID, DataPacket income) {
 		Usermodul usermodul = chatserver.getUsermodul();
 
-		if (usermodul.isLogedin(workerID)) {
+		if (usermodul.isLoggedIn(workerID)) {
 			if (income.getArguments().size() == 1) {
 				String address = income.getArguments().get(0);
 				String[] split = address.split(":");

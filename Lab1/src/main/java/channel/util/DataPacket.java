@@ -4,7 +4,7 @@ import java.io.Serializable;
 import java.util.List;
 
 /**
- * Created by Lukas on 19.10.2015.
+ * Abstract DTO class for the communication over a socket
  */
 public abstract class DataPacket implements Serializable {
 	private static final long serialVersionUID = 5950169519310163575L;
@@ -59,6 +59,16 @@ public abstract class DataPacket implements Serializable {
 	}
 
 	@Override
+	public int hashCode() {
+		int result = command.hashCode();
+		result = 31 * result + (arguments != null ? arguments.hashCode() : 0);
+		result = 31 * result + (response != null ? response.hashCode() : 0);
+		result = 31 * result + (error ? 1 : 0);
+		result = 31 * result + (errorMsg != null ? errorMsg.hashCode() : 0);
+		return result;
+	}
+
+	@Override
 	public boolean equals(Object o) {
 		if (this == o) return true;
 		if (o == null || getClass() != o.getClass()) return false;
@@ -70,16 +80,6 @@ public abstract class DataPacket implements Serializable {
 		       !(response != null ? !response.equals(that.response) : that.response != null) &&
 		       !(errorMsg != null ? !errorMsg.equals(that.errorMsg) : that.errorMsg != null);
 
-	}
-
-	@Override
-	public int hashCode() {
-		int result = command.hashCode();
-		result = 31 * result + (arguments != null ? arguments.hashCode() : 0);
-		result = 31 * result + (response != null ? response.hashCode() : 0);
-		result = 31 * result + (error ? 1 : 0);
-		result = 31 * result + (errorMsg != null ? errorMsg.hashCode() : 0);
-		return result;
 	}
 
 	@Override

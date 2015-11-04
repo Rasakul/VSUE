@@ -3,7 +3,7 @@ package chatserver.listener;
 import java.io.Closeable;
 
 /**
- * Created by Lukas on 16.10.2015.
+ * Interface for the listening on a blocking socket in a multithreading server
  */
 public interface Serverlistener extends Runnable, Closeable {
 

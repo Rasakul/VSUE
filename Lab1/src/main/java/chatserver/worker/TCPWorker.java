@@ -15,7 +15,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Created by Lukas on 16.10.2015.
+ * Process the incoming TCP socket of the corresponding listener and manage and communicate with it
  */
 public class TCPWorker implements Worker {
 	private static final Logger LOGGER = Logger.getLogger(TCPWorker.class.getName());
@@ -30,8 +30,6 @@ public class TCPWorker implements Worker {
 
 	private volatile boolean running    = true;
 	private          boolean clientquit = false;
-	private String  clienthost;
-	private Integer clientport;
 
 	public TCPWorker(int ID, Chatserver chatserver, Socket clientSocket, PrintStream userResponseStream) {
 		this.ID = ID;
@@ -48,10 +46,8 @@ public class TCPWorker implements Worker {
 	public void run() {
 		try {
 
-			clienthost = clientSocket.getInetAddress().toString();
-			clientport = clientSocket.getPort();
-
-			LOGGER.info("New TCP Worker with ID " + ID + "with client " + clienthost + ":" + clientport);
+			LOGGER.info("New TCP Worker with ID " + ID + "with client " + clientSocket.getInetAddress() + ":" +
+			            clientSocket.getPort());
 
 			while (running) {
 				DataPacket dataPacket = channel.receive();

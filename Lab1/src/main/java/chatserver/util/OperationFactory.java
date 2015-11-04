@@ -7,11 +7,11 @@ import chatserver.util.operation.*;
 import java.util.HashMap;
 
 /**
- * Created by Lukas on 20.10.2015.
+ * Factory for all available operations
  */
 public class OperationFactory {
 	private final Chatserver                 chatserver;
-	private       HashMap<String, Operation> operationMap;
+	private final HashMap<String, Operation> operationMap;
 
 	public OperationFactory(Chatserver chatserver) {
 		this.chatserver = chatserver;
@@ -24,6 +24,14 @@ public class OperationFactory {
 		operationMap.put("lookup", new LookupOperation(chatserver));
 	}
 
+	/**
+	 * choose the corresponding operation to the {@link DataPacket} and process it
+	 *
+	 * @param workerID ID of the worker who request the operation
+	 * @param income   incoming datapaket to process
+	 *
+	 * @return a datapacket with filled in response or error message
+	 */
 	public DataPacket process(Integer workerID, DataPacket income) {
 
 		if (income.getCommand() != null && !income.getCommand().equals("")) {

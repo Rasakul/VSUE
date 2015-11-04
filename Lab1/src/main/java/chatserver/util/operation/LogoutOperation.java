@@ -5,7 +5,7 @@ import chatserver.Chatserver;
 import chatserver.util.Usermodul;
 
 /**
- * Created by Lukas on 21.10.2015.
+ * Validate the DataPacket arguments and log out the user, if the user is logged in
  */
 public class LogoutOperation implements Operation {
 
@@ -23,7 +23,7 @@ public class LogoutOperation implements Operation {
 			String username = income.getArguments().get(0);
 			Usermodul usermodul = chatserver.getUsermodul();
 
-			if (usermodul.isLogedin(username)) {
+			if (usermodul.isLoggedIn(username)) {
 				usermodul.logoutUser(workerID);
 				income.setResponse("Successfully logged out.");
 			} else {

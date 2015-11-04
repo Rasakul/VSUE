@@ -5,7 +5,7 @@ import chatserver.Chatserver;
 import chatserver.util.Usermodul;
 
 /**
- * Created by Lukas on 20.10.2015.
+ * Validate the DataPacket arguments, check the password and log in the user, if the user is not already logged in
  */
 public class LoginOperation implements Operation {
 
@@ -26,7 +26,7 @@ public class LoginOperation implements Operation {
 
 			if (usermodul.checkPassword(username, password)) {
 
-				if (!usermodul.isLogedin(username)) {
+				if (!usermodul.isLoggedIn(username)) {
 					usermodul.loginUser(workerID, username);
 					income.setResponse("Successfully logged in.");
 				} else {
