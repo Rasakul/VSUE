@@ -20,8 +20,6 @@ import java.net.DatagramSocket;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.logging.Level;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
@@ -29,7 +27,6 @@ import java.util.logging.Logger;
 public class Client implements IClientCli, Runnable {
 	private static final Logger LOGGER = Logger.getLogger(Client.class.getName());
 
-	private final ExecutorService executor;
 	private final String          componentName;
 	private final String          host;
 	private final Integer         port_tcp;
@@ -64,8 +61,6 @@ public class Client implements IClientCli, Runnable {
 		this.componentName = componentName;
 		this.userResponseStream = userResponseStream;
 
-		this.executor = Executors.newCachedThreadPool();
-
 		this.host = config.getString("chatserver.host");
 		this.port_udp = config.getInt("chatserver.udp.port");
 		this.port_tcp = config.getInt("chatserver.tcp.port");
@@ -94,7 +89,8 @@ public class Client implements IClientCli, Runnable {
 
 		try {
 			LOGGER.info("starting client " + componentName);
-			executor.execute(shell);
+			Thread thread = new Thread(shell);
+			thread.start();
 
 			this.setupUDPServerConnection();
 
@@ -110,7 +106,8 @@ public class Client implements IClientCli, Runnable {
 		socket_tcp = new Socket(host, port_tcp);
 		this.activListener = new PublicListener(this, socket_tcp, userResponseStream);
 		this.channel_tcp = new TCPChannel(socket_tcp);
-		executor.execute(activListener);
+		Thread thread = new Thread(activListener);
+		thread.start();
 	}
 
 	private void setupUDPServerConnection() throws IOException {
@@ -118,7 +115,8 @@ public class Client implements IClientCli, Runnable {
 		socket_udp = new DatagramSocket();
 		this.udpListener = new UDPListener(this, socket_udp, userResponseStream, host, port_udp);
 		this.channel_udp = new UDPChannel(socket_udp, host, port_udp);
-		executor.execute(udpListener);
+		Thread thread = new Thread(udpListener);
+		thread.start();
 	}
 
 	private void closeTCPServerConnection() throws IOException {
@@ -142,14 +140,18 @@ public class Client implements IClientCli, Runnable {
 	@Command
 	public String login(String username, String password) throws IOException {
 		if (!loggedIn && !serverdown) {
+			try {
+				this.setupTCPServerConnection();
 
-			this.setupTCPServerConnection();
-
-			this.username = username;
-			ArrayList<String> args = new ArrayList<>();
-			args.add(username);
-			args.add(password);
-			channel_tcp.send(new TCPDataPacket("login", args));
+				this.username = username;
+				ArrayList<String> args = new ArrayList<>();
+				args.add(username);
+				args.add(password);
+				channel_tcp.send(new TCPDataPacket("login", args));
+			} catch (IOException e){
+				LOGGER.log(Level.SEVERE, "problem with socket", e);
+				return "Error, server not reachable!";
+			}
 		}
 		return null;
 	}
@@ -262,8 +264,9 @@ public class Client implements IClientCli, Runnable {
 						}
 						if (registerSuccess) {
 							ServerSocket privateSocket = new ServerSocket(Integer.parseInt(port));
-							privateListener = new PrivateListener(this, privateSocket, userResponseStream, executor);
-							executor.execute(privateListener);
+							privateListener = new PrivateListener(this, privateSocket, userResponseStream);
+							Thread thread = new Thread(privateListener);
+							thread.start();
 						}
 					} catch (IOException e) {
 						userResponseStream.println("Error with address: " + e.getMessage());
@@ -300,8 +303,6 @@ public class Client implements IClientCli, Runnable {
 			if (privateListener != null) privateListener.close();
 			this.closeUDPServerConnection();
 			if (shell != null) shell.close();
-
-			executor.shutdown();
 		} catch (IOException ignored) {
 		}
 

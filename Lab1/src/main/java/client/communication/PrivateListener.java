@@ -21,16 +21,13 @@ public class PrivateListener implements ClientCommunication {
 	private final Client          client;
 	private final ServerSocket    serverSocket;
 	private final PrintStream     userResponseStream;
-	private final ExecutorService executor;
 
 	private volatile boolean running = true;
 
-	public PrivateListener(Client client, ServerSocket serverSocket, PrintStream userResponseStream,
-	                       ExecutorService executor) {
+	public PrivateListener(Client client, ServerSocket serverSocket, PrintStream userResponseStream) {
 		this.client = client;
 		this.serverSocket = serverSocket;
 		this.userResponseStream = userResponseStream;
-		this.executor = executor;
 	}
 
 	@Override
@@ -43,12 +40,13 @@ public class PrivateListener implements ClientCommunication {
 				DataPacket dataPacket = channel.receive();
 				String message = dataPacket.getCommand();
 				userResponseStream.println(message);
-				if (!message.equals("!ack")) {
-					dataPacket.setResponse("!ack");
-					channel.send(dataPacket);
+
+				if (message.equals("!ack")) {
 					channel.close();
 					clientSocket.close();
 				} else {
+					dataPacket.setResponse("!ack");
+					channel.send(dataPacket);
 					channel.close();
 					clientSocket.close();
 				}
