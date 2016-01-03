@@ -17,7 +17,7 @@ public interface Channel extends Closeable {
 	 *
 	 * @throws IOException if an error occurs during the communication with the Socket
 	 */
-	void send(DataPacket data) throws IOException;
+	void send(Object data) throws IOException;
 
 	/**
 	 * Receiving a {@link DataPacket} over the channel
@@ -28,5 +28,5 @@ public interface Channel extends Closeable {
 	 * @throws IOException            if an error occurs during the communication with the Socket
 	 * @throws ClassNotFoundException if the wrong type of {@link DataPacket} was received
 	 */
-	DataPacket receive() throws IOException, ClassNotFoundException;
+	Object receive() throws IOException, ClassNotFoundException;
 }

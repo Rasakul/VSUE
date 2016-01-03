@@ -46,7 +46,7 @@ public class UDPListener implements Serverlistener {
 			LOGGER.info("UDP is UP!");
 
 			while (running) {
-				DataPacket dataPacket = channel.receive();
+				DataPacket dataPacket = (DataPacket) channel.receive();
 				Worker worker = new UDPWorker(chatserver, dataPacket, userResponseStream, socket);
 				executor.execute(worker);
 			}

@@ -50,7 +50,7 @@ public class TCPWorker implements Worker {
 			            clientSocket.getPort());
 
 			while (running) {
-				DataPacket dataPacket = channel.receive();
+				DataPacket dataPacket = (DataPacket) channel.receive();
 				String input = dataPacket.getCommand();
 
 				if (input == null || input.equals("quit")) {

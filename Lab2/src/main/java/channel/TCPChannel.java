@@ -1,11 +1,6 @@
 package channel;
 
-import channel.util.DataPacket;
-import channel.util.TCPDataPacket;
-
 import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.util.logging.Logger;
 
@@ -15,24 +10,26 @@ import java.util.logging.Logger;
 public class TCPChannel implements Channel {
 	private static final Logger LOGGER = Logger.getLogger(TCPChannel.class.getName());
 
-	private final Socket socket;
+	private final Base64Channel base64Channel;
 
 	public TCPChannel(Socket socket) {
-		this.socket = socket;
+		base64Channel = new Base64Channel(socket);
 	}
 
 
 	@Override
-	public void send(DataPacket data) throws IOException {
+	public void send(Object data) throws IOException {
 		LOGGER.fine("sending: " + data);
-		ObjectOutputStream outputStream = new ObjectOutputStream(socket.getOutputStream());
-		outputStream.writeObject(data);
+		//		ObjectOutputStream outputStream = new ObjectOutputStream(socket.getOutputStream());
+		//		outputStream.writeObject(data);
+		base64Channel.send(data);
 	}
 
 	@Override
-	public DataPacket receive() throws IOException, ClassNotFoundException {
-		ObjectInputStream inStream = new ObjectInputStream(socket.getInputStream());
-		DataPacket response = (TCPDataPacket) inStream.readObject();
+	public Object receive() throws IOException, ClassNotFoundException {
+		//		ObjectInputStream inStream = new ObjectInputStream(socket.getInputStream());
+		//		DataPacket response = (TCPDataPacket) inStream.readObject();
+		Object response = base64Channel.receive();
 		LOGGER.fine("receiving: " + response);
 		return response;
 	}

@@ -27,7 +27,7 @@ public class UDPChannel implements Channel {
 	}
 
 	@Override
-	public void send(DataPacket dataPacket) throws IOException {
+	public void send(Object dataPacket) throws IOException {
 		LOGGER.fine("sending: " + dataPacket);
 
 		ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
@@ -40,7 +40,7 @@ public class UDPChannel implements Channel {
 	}
 
 	@Override
-	public DataPacket receive() throws IOException, ClassNotFoundException {
+	public Object receive() throws IOException, ClassNotFoundException {
 
 		DatagramPacket packet_in = new DatagramPacket(new byte[1024], 1024);
 		socket.receive(packet_in);
