@@ -8,10 +8,12 @@ import chatserver.worker.Worker;
 import cli.Command;
 import cli.Shell;
 import util.Config;
+import util.Keyloader;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
+import java.security.Key;
 import java.util.Hashtable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -23,6 +25,8 @@ public class Chatserver implements IChatserverCli, Runnable {
 	private static final Logger LOGGER = Logger.getLogger(Chatserver.class.getName());
 
 	public static int WORKER_COUNTER = 0;
+	private final String keys_dir;
+	private Key privatekey;
 
 	private String         componentName;
 	private Config         server_config;
@@ -47,10 +51,22 @@ public class Chatserver implements IChatserverCli, Runnable {
 		this.componentName = componentName;
 		this.server_config = server_config;
 		this.userResponseStream = userResponseStream;
+		this.keys_dir = server_config.getString("keys.dir");
 
 		openConnections = new Hashtable<>();
 		executor = Executors.newCachedThreadPool();
 		usermodul = new Usermodul();
+
+		try {
+			this.privatekey = Keyloader.loadServerPrivatekey(server_config.getString("key"));
+		} catch (IOException e) {
+			LOGGER.log(Level.SEVERE, e.getMessage());
+			try {
+				exit();
+			} catch (IOException e1) {
+				LOGGER.log(Level.SEVERE, e1.getMessage());
+			}
+		}
 
 		shell = new Shell(componentName, userRequestStream, userResponseStream);
 		shell.register(this);
@@ -132,4 +148,12 @@ public class Chatserver implements IChatserverCli, Runnable {
 	public synchronized Worker getConnectionByID(Integer ID) {return openConnections.get(ID);}
 
 	public Usermodul getUsermodul() {return usermodul; }
+
+	public String getKeys_dir() {
+		return keys_dir;
+	}
+
+	public Key getPrivatekey() {
+		return privatekey;
+	}
 }

@@ -1,6 +1,6 @@
 package client.communication;
 
-import channel.TCPChannel;
+import channel.*;
 import channel.util.DataPacket;
 import client.Client;
 
@@ -35,8 +35,8 @@ public class PrivateListener implements ClientCommunication {
             LOGGER.info("Private TCP listening activ");
             while (running) {
                 Socket clientSocket = serverSocket.accept();
-                TCPChannel channel = new TCPChannel(clientSocket);
-                DataPacket dataPacket = (DataPacket) channel.receive();
+                ObjectChannel channel = new ObjectChannel(clientSocket);
+                DataPacket dataPacket = channel.receive();
                 String message = dataPacket.getCommand();
                 userResponseStream.println(message);
 

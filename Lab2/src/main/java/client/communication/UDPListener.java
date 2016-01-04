@@ -1,6 +1,6 @@
 package client.communication;
 
-import channel.UDPChannel;
+import channel.SimpleUDPChannel;
 import channel.util.DataPacket;
 import client.Client;
 
@@ -18,7 +18,7 @@ public class UDPListener implements ClientCommunication {
 
     private final Client client;
     private final PrintStream userResponseStream;
-    private final UDPChannel channel;
+    private final SimpleUDPChannel channel;
     private volatile boolean running = true;
 
     public UDPListener(Client client, DatagramSocket socket_udp, PrintStream userResponseStream, String host,
@@ -27,7 +27,7 @@ public class UDPListener implements ClientCommunication {
         this.client = client;
         this.userResponseStream = userResponseStream;
 
-        this.channel = new UDPChannel(socket_udp, host, port_udp);
+        this.channel = new SimpleUDPChannel(socket_udp, host, port_udp);
     }
 
     @Override

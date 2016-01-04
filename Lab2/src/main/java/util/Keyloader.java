@@ -9,7 +9,9 @@ import java.security.Key;
  */
 public class Keyloader {
 
-    public static Key loadServerkey(String server_key) throws IOException {
+
+
+    public static Key loadServerPublickey(String server_key) throws IOException {
         String path = Keyloader.class.getProtectionDomain().getCodeSource().getLocation().getPath();
 
         String server_path = path.replace("build/", server_key);
@@ -17,11 +19,27 @@ public class Keyloader {
         return Keys.readPublicPEM(pub);
     }
 
-    public static Key loadClientkey(String keys_dir, String username) throws IOException {
+    public static Key loadServerPrivatekey(String server_key) throws IOException {
+        String path = Keyloader.class.getProtectionDomain().getCodeSource().getLocation().getPath();
+
+        String server_path = path.replace("build/", server_key);
+        File pem = new File(server_path);
+        return Keys.readPrivatePEM(pem);
+    }
+
+    public static Key loadClientPrivatekey(String keys_dir, String username) throws IOException {
         String path = Keyloader.class.getProtectionDomain().getCodeSource().getLocation().getPath();
 
         String server_path = path.replace("build/", keys_dir + File.separator + username + ".pem");
-        File pub = new File(server_path);
-        return Keys.readPrivatePEM(pub);
+        File pem = new File(server_path);
+        return Keys.readPrivatePEM(pem);
+    }
+
+    public static Key loadClientPublickey(String keys_dir, String username) throws IOException {
+        String path = Keyloader.class.getProtectionDomain().getCodeSource().getLocation().getPath();
+
+        String server_path = path.replace("build/", keys_dir + File.separator + username + ".pub.pem");
+        File pem = new File(server_path);
+        return Keys.readPublicPEM(pem);
     }
 }

@@ -1,6 +1,6 @@
 package chatserver.worker;
 
-import channel.UDPChannel;
+import channel.SimpleUDPChannel;
 import channel.util.DataPacket;
 import channel.util.UDPDataPacket;
 import chatserver.Chatserver;
@@ -21,7 +21,7 @@ public class UDPWorker implements Worker {
 	private final UDPDataPacket  udp_dataPacket;
 	private final DatagramSocket socket;
 	private final PrintStream    userResponseStream;
-	private final UDPChannel     channel;
+	private final SimpleUDPChannel channel;
 
 
 	private volatile boolean running = true;
@@ -32,7 +32,7 @@ public class UDPWorker implements Worker {
 		this.udp_dataPacket = (UDPDataPacket) dataPacket;
 		this.userResponseStream = userResponseStream;
 		this.socket = socket;
-		this.channel = new UDPChannel(socket, udp_dataPacket.getHost(), udp_dataPacket.getPort());
+		this.channel = new SimpleUDPChannel(socket, udp_dataPacket.getHost(), udp_dataPacket.getPort());
 	}
 
 	@Override

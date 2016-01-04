@@ -1,6 +1,7 @@
 package chatserver.listener;
 
 import channel.Channel;
+import channel.SimpleUDPChannel;
 import channel.UDPChannel;
 import channel.util.DataPacket;
 import chatserver.Chatserver;
@@ -27,7 +28,7 @@ public class UDPListener implements Serverlistener {
 	private final PrintStream     userResponseStream;
 	private final ExecutorService executor;
 	private       DatagramSocket  socket;
-	private       Channel         channel;
+	private UDPChannel channel;
 	private volatile boolean running = true;
 
 	public UDPListener(Chatserver chatserver, Config server_config, PrintStream userResponseStream,
@@ -42,7 +43,7 @@ public class UDPListener implements Serverlistener {
 	public void run() {
 		try {
 			socket = new DatagramSocket(server_config.getInt("udp.port"));
-			this.channel = new UDPChannel(socket, null, null); //crete a channel only for receiving
+			this.channel = new SimpleUDPChannel(socket, null, null); //crete a channel only for receiving
 			LOGGER.info("UDP is UP!");
 
 			while (running) {

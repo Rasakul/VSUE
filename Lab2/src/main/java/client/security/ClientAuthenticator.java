@@ -1,103 +1,99 @@
 package client.security;
 
-import channel.TCPChannel;
+import channel.AESChannel;
 import client.Client;
-import org.bouncycastle.util.encoders.Base64;
+import security.Base64Util;
+import security.CipherUtil;
 
-import javax.crypto.Cipher;
+import javax.crypto.spec.SecretKeySpec;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.net.Socket;
+import java.nio.charset.StandardCharsets;
 import java.security.Key;
-import java.security.SecureRandom;
 import java.util.Arrays;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
  * Created by lukas on 03.01.2016.
  */
-public class ClientAuthenticator implements Runnable {
+public class ClientAuthenticator {
     private static final Logger LOGGER = Logger.getLogger(ClientAuthenticator.class.getName());
 
-    private final String ALGORITHM = "RSA/NONE/OAEPWithSHA256AndMGF1Padding";
-
-    private final TCPChannel channel_tcp;
+    private AESChannel channel_tcp;
     private final Client client;
-    private final Socket socket_tcp;
     private final PrintStream userResponseStream;
-    private final Key server_key;
-    private final Key client_key;
-    private final String username;
+    private final Key serverkey;
+    private Key client_key;
+    private String username;
+    private Key clientkey;
 
-    public ClientAuthenticator(Client client, Socket socket_tcp, PrintStream userResponseStream, Key server_key, Key client_key, String username) {
+    private byte[] client_challenge;
+    private byte[] iv_parameter;
+    private SecretKeySpec secretKey;
+
+    public ClientAuthenticator(Client client, PrintStream userResponseStream, Key serverkey) {
+
         this.client = client;
-        this.socket_tcp = socket_tcp;
         this.userResponseStream = userResponseStream;
-        this.server_key = server_key;
-        this.client_key = client_key;
-        this.username = username;
-        this.channel_tcp = new TCPChannel(socket_tcp);
+        this.serverkey = serverkey;
     }
 
-    @Override
-    public void run() {
-
-        byte[] randomNumber = generateRandomNumber();
-        randomNumber = encodeBase64(randomNumber);
-        byte[] client_challenge = encrypt(randomNumber, server_key);
-
-        String message_string = "!authenticate " + username + " ";
-        byte[] message1_p1 = message_string.getBytes();
-        byte[] message1 = concat(message1_p1,client_challenge);
+    public void process(Socket socket_tcp, String username, Key clientkey) {
+        this.username = username;
+        this.clientkey = clientkey;
+        this.channel_tcp = new AESChannel(socket_tcp);
 
         try {
-            channel_tcp.send(message1);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+            channel_tcp.send(firstStage());
+            byte[] message2 = channel_tcp.receive();
+            channel_tcp.send(secondStage(message2));
 
-        try {
-            byte[] message2 = (byte[]) channel_tcp.receive();
         } catch (IOException | ClassNotFoundException e) {
             e.printStackTrace();
         }
 
     }
 
-    private byte[] generateRandomNumber() {
-        SecureRandom secureRandom = new SecureRandom();
-        final byte[] number = new byte[32];
-        secureRandom.nextBytes(number);
-        return number;
-    }
+    private byte[] secondStage(byte[] bytes) {
+        bytes = CipherUtil.decryptRSA(bytes, client_key);
 
+        String message2 = new String(bytes, StandardCharsets.UTF_8);
+        String[] parts = message2.split(" ");
 
-    private byte[] encodeBase64(byte[] bytes) {
-        LOGGER.log(Level.FINE, "encodeBase64");
-        return Base64.encode(bytes);
-    }
+        LOGGER.fine(message2);
 
-    private byte[] decodeBase64(byte[] bytes) {
-        LOGGER.log(Level.FINE, "decodeBase64");
-        return Base64.decode(bytes);
-    }
+        byte[] client_challenge = Base64Util.encodeBase64(parts[1].getBytes(StandardCharsets.UTF_8));
+        byte[] server_challenge = Base64Util.encodeBase64(parts[2].getBytes(StandardCharsets.UTF_8));
 
-    public byte[] encrypt(byte[] text, Key key) {
-        byte[] cipherText = null;
-        try {
-            // get an RSA cipher object and print the provider
-            final Cipher cipher = Cipher.getInstance(ALGORITHM);
-            // encrypt the plain text using the public key
-            cipher.init(Cipher.ENCRYPT_MODE, key);
-            cipherText = cipher.doFinal(text);
-        } catch (Exception e) {
-            e.printStackTrace();
+        byte[] secretKey_bytes = Base64Util.encodeBase64(parts[3].getBytes(StandardCharsets.UTF_8));
+        this.iv_parameter = Base64Util.encodeBase64(parts[4].getBytes(StandardCharsets.UTF_8));
+
+        this.secretKey = new SecretKeySpec(secretKey_bytes, 0, secretKey_bytes.length, "AES");
+
+        if (!Arrays.equals(client_challenge, this.client_challenge)) {
+            userResponseStream.println("Error, Server hacked!");
         }
-        return cipherText;
+
+        channel_tcp.activateAESEncryption(secretKey,iv_parameter);
+
+        return server_challenge;
     }
 
-    public byte[] concat(byte[] first, byte[] second) {
+    public byte[] firstStage() {
+        this.client_challenge = CipherUtil.generateRandomNumber_32Byte();
+        client_challenge = Base64Util.encodeBase64(client_challenge);
+
+        String message_string = "!authenticate " + username + " ";
+        byte[] message1_p1 = message_string.getBytes(StandardCharsets.UTF_8);
+        byte[] message1 = concat(message1_p1, client_challenge);
+
+        LOGGER.fine(new String(message1, StandardCharsets.UTF_8));
+
+        return CipherUtil.encryptRSA(message1, serverkey);
+    }
+
+    private byte[] concat(byte[] first, byte[] second) {
         byte[] result = Arrays.copyOf(first, first.length + second.length);
         System.arraycopy(second, 0, result, first.length, second.length);
         return result;

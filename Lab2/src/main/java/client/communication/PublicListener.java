@@ -1,6 +1,6 @@
 package client.communication;
 
-import channel.TCPChannel;
+import channel.*;
 import channel.util.DataPacket;
 import client.Client;
 
@@ -18,7 +18,7 @@ public class PublicListener implements ClientCommunication {
 
     private final Client client;
     private final PrintStream userResponseStream;
-    private final TCPChannel channel;
+    private final ObjectChannel channel;
 
     private volatile boolean running = true;
 
@@ -26,7 +26,7 @@ public class PublicListener implements ClientCommunication {
         this.client = client;
         this.userResponseStream = userResponseStream;
 
-        this.channel = new TCPChannel(socket);
+        this.channel = new ObjectChannel(socket);
     }
 
     @Override
@@ -34,7 +34,7 @@ public class PublicListener implements ClientCommunication {
         try {
             LOGGER.info("Server TCP listening activ");
             while (running) {
-                DataPacket dataPacket = (DataPacket) channel.receive();
+                DataPacket dataPacket = channel.receive();
                 if (dataPacket.getCommand() != null) {
 
                     String response;

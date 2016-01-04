@@ -1,7 +1,7 @@
 package client;
 
-import channel.Channel;
-import channel.TCPChannel;
+import channel.ObjectChannel;
+import channel.SimpleUDPChannel;
 import channel.UDPChannel;
 import channel.util.DataPacket;
 import channel.util.TCPDataPacket;
@@ -12,8 +12,8 @@ import client.communication.PrivateListener;
 import client.communication.PublicListener;
 import client.communication.UDPListener;
 import client.security.ClientAuthenticator;
-import util.Keyloader;
 import util.Config;
+import util.Keyloader;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -35,7 +35,7 @@ public class Client implements IClientCli, Runnable {
     private final Integer port_tcp;
     private final Integer port_udp;
     private final String keys_dir;
-    private Key serverkey;
+    private ClientAuthenticator authenticator;
     private String lastLookupAdress;
     private volatile boolean lookupPerfomed = false;
     private volatile boolean registerSuccess = false;
@@ -43,8 +43,8 @@ public class Client implements IClientCli, Runnable {
     private volatile boolean loggedIn = false;
     private volatile boolean serverdown = false;
     private volatile boolean lookupError = false;
-    private Channel channel_tcp;
-    private Channel channel_udp;
+    private ObjectChannel channel_tcp;
+    private UDPChannel channel_udp;
     private Shell shell;
     private PublicListener activListener;
     private PrivateListener privateListener;
@@ -66,13 +66,15 @@ public class Client implements IClientCli, Runnable {
         this.componentName = componentName;
         this.userResponseStream = userResponseStream;
 
+
         this.host = config.getString("chatserver.host");
         this.port_udp = config.getInt("chatserver.udp.port");
         this.port_tcp = config.getInt("chatserver.tcp.port");
         this.keys_dir = config.getString("keys.dir");
 
         try {
-            this.serverkey = Keyloader.loadServerkey(config.getString("chatserver.key"));
+            Key serverkey = Keyloader.loadServerPublickey(config.getString("chatserver.key"));
+            this.authenticator = new ClientAuthenticator(this, userResponseStream, serverkey);
         } catch (IOException e) {
             LOGGER.log(Level.SEVERE, e.getMessage());
             exit();
@@ -122,7 +124,7 @@ public class Client implements IClientCli, Runnable {
     private void setupTCPServerConnection() throws IOException {
         LOGGER.info("set up TCP connection to server");
         this.activListener = new PublicListener(this, socket_tcp, userResponseStream);
-        this.channel_tcp = new TCPChannel(socket_tcp);
+        this.channel_tcp = new ObjectChannel(socket_tcp);
         Thread thread = new Thread(activListener);
         thread.start();
     }
@@ -131,7 +133,7 @@ public class Client implements IClientCli, Runnable {
         LOGGER.info("set up UDP connection to server");
         socket_udp = new DatagramSocket();
         this.udpListener = new UDPListener(this, socket_udp, userResponseStream, host, port_udp);
-        this.channel_udp = new UDPChannel(socket_udp, host, port_udp);
+        this.channel_udp = new SimpleUDPChannel(socket_udp, host, port_udp);
         Thread thread = new Thread(udpListener);
         thread.start();
     }
@@ -227,11 +229,11 @@ public class Client implements IClientCli, Runnable {
                         String host = split[0];
                         String port = split[1];
                         Socket socket = new Socket(host, Integer.parseInt(port));
-                        TCPChannel channel = new TCPChannel(socket);
+                        ObjectChannel channel = new ObjectChannel(socket);
                         ArrayList<String> args = new ArrayList<>();
                         DataPacket dataPacket = new TCPDataPacket("[private] " + username + ": " + message, args);
                         channel.send(dataPacket);
-                        dataPacket = (DataPacket) channel.receive();
+                        dataPacket = channel.receive();
                         String response = dataPacket.getResponse();
                         userResponseStream.println(response);
                         registerSuccess = false;
@@ -335,11 +337,9 @@ public class Client implements IClientCli, Runnable {
                 this.username = username;
                 this.setupTCPSocket();
 
-                Key clientkey = Keyloader.loadClientkey(keys_dir, username);
+                Key clientkey = Keyloader.loadClientPrivatekey(keys_dir, username);
 
-                ClientAuthenticator authenticator = new ClientAuthenticator(this, socket_tcp, userResponseStream, serverkey, clientkey, username);
-                Thread thread = new Thread(authenticator);
-                thread.start();
+                authenticator.process(socket_tcp, username, clientkey);
 
                 while (!loggedIn && !serverdown) {
                     //wait
