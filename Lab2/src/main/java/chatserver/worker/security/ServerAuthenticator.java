@@ -150,7 +150,7 @@ public class ServerAuthenticator {
 	private void secondStage(byte[] bytes) {
 		LOGGER.info("performing second stage of handshake");
 
-		if (!Arrays.equals(bytes, this.server_challenge)) {
+		if (!Arrays.equals(Base64Util.decodeBase64(bytes), this.server_challenge)) {
 			userResponseStream.println("Error, wrong client identity!");
 			LOGGER.log(Level.SEVERE, "Error, wrong client identity!");
 			LOGGER.log(Level.SEVERE,

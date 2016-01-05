@@ -71,12 +71,17 @@ public class Chatserver implements IChatserverCli, Runnable {
 			rootNameserver = (INameserver) registry.lookup(server_config.getString("root_id"));
 		} catch (RemoteException | NotBoundException e) {
 			LOGGER.log(Level.SEVERE, "Error while getting root nameserver.", e);
+			try {
+				exit();
+			} catch (IOException e1) {
+				LOGGER.log(Level.SEVERE, e1.getMessage());
+			}
 		}
 
 		try {
 			this.privatekey = Keyloader.loadServerPrivatekey(server_config.getString("key"));
 		} catch (IOException e) {
-			LOGGER.log(Level.SEVERE, e.getMessage());
+			LOGGER.log(Level.SEVERE, "error loading key", e);
 			try {
 				exit();
 			} catch (IOException e1) {
@@ -171,7 +176,7 @@ public class Chatserver implements IChatserverCli, Runnable {
 	public Usermodul getUsermodul() {
 		return usermodul;
 	}
-	
+
 	public INameserver getRootNameserver() {
 		return rootNameserver;
 	}

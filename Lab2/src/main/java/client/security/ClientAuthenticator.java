@@ -122,7 +122,7 @@ public class ClientAuthenticator {
 		LOGGER.fine(message2);
 
 		byte[] client_challenge = Base64Util.decodeBase64(parts[1].getBytes(StandardCharsets.UTF_8));
-		byte[] server_challenge = Base64Util.decodeBase64(parts[2].getBytes(StandardCharsets.UTF_8));
+		byte[] server_challenge = parts[2].getBytes(StandardCharsets.UTF_8);
 
 		byte[] secretKey_bytes = Base64Util.decodeBase64(parts[3].getBytes(StandardCharsets.UTF_8));
 		this.iv_parameter = Base64Util.decodeBase64(parts[4].getBytes(StandardCharsets.UTF_8));
