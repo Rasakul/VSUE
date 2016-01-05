@@ -7,11 +7,16 @@ import chatserver.util.Usermodul;
 import chatserver.worker.Worker;
 import cli.Command;
 import cli.Shell;
+import nameserver.INameserver;
 import util.Config;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
+import java.rmi.NotBoundException;
+import java.rmi.RemoteException;
+import java.rmi.registry.LocateRegistry;
+import java.rmi.registry.Registry;
 import java.util.Hashtable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -36,6 +41,8 @@ public class Chatserver implements IChatserverCli, Runnable {
 
 	private Hashtable<Integer, Worker> openConnections;
 
+	private INameserver rootNameserver;
+
 	/**
 	 * @param componentName      the name of the component - represented in the prompt
 	 * @param server_config      the configuration to use
@@ -51,6 +58,16 @@ public class Chatserver implements IChatserverCli, Runnable {
 		openConnections = new Hashtable<>();
 		executor = Executors.newCachedThreadPool();
 		usermodul = new Usermodul();
+
+		try {
+			Registry registry = LocateRegistry.getRegistry(server_config.getString("registry.host"), server_config.getInt("registry.port"));
+			rootNameserver = (INameserver) registry.lookup(server_config.getString("root_id"));
+		} catch (RemoteException e) {
+			LOGGER.log(Level.SEVERE, "Error while getting root nameserver.", e);
+		} catch (NotBoundException e) {
+			LOGGER.log(Level.SEVERE, "Error while getting root nameserver.", e);
+		}
+
 
 		shell = new Shell(componentName, userRequestStream, userResponseStream);
 		shell.register(this);
@@ -132,4 +149,8 @@ public class Chatserver implements IChatserverCli, Runnable {
 	public synchronized Worker getConnectionByID(Integer ID) {return openConnections.get(ID);}
 
 	public Usermodul getUsermodul() {return usermodul; }
+
+	public INameserver getRootNameserver() {
+		return rootNameserver;
+	}
 }

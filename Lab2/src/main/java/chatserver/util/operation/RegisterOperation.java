@@ -3,7 +3,10 @@ package chatserver.util.operation;
 import channel.util.DataPacket;
 import chatserver.Chatserver;
 import chatserver.util.Usermodul;
+import nameserver.exceptions.AlreadyRegisteredException;
+import nameserver.exceptions.InvalidDomainException;
 
+import java.rmi.RemoteException;
 import java.util.regex.Pattern;
 
 /**
@@ -29,7 +32,16 @@ public class RegisterOperation implements Operation {
 				String[] split = address.split(":");
 				if (split[0] != null && PATTERN.matcher(split[0]).matches()) {
 					String username = usermodul.getUser(workerID);
-					usermodul.registerUser(username, address);
+					try {
+						chatserver.getRootNameserver().registerUser(username,address);
+					} catch (RemoteException e) {
+						e.printStackTrace();
+					} catch (AlreadyRegisteredException e) {
+						e.printStackTrace();
+					} catch (InvalidDomainException e) {
+						e.printStackTrace();
+					}
+					//usermodul.registerUser(username, address);
 					income.setResponse("Successfully registered address for " + username);
 
 				} else {
