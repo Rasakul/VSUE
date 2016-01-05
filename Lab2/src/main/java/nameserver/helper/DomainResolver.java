@@ -7,61 +7,60 @@ package nameserver.helper;
  * @since 04.01.2016
  */
 public class DomainResolver {
-    private String domainName;
+	private String domainName;
 
-    public DomainResolver(String domain) {
-        domainName = domain;
-    }
+	public DomainResolver(String domain) {
+		domainName = domain;
+	}
 
-    /**
-     * Checks if the domainName contains only alphanumeric characters and dots (two dots to each other is not allowed)
-     *
-     * @return whether the domainName is valid or not
-     */
-    public boolean isValidDomain(){
-        if (domainName.contains("..")) return false;
+	/**
+	 * Checks if the domainName contains only alphanumeric characters and dots (two dots to each other is not allowed)
+	 *
+	 * @return whether the domainName is valid or not
+	 */
+	public boolean isValidDomain() {
+		if (domainName.contains("..")) return false;
 
-        return domainName.matches("^[a-zA-Z0-9.]+$");
-    }
+		return domainName.matches("^[a-zA-Z0-9.]+$");
+	}
 
-    /**
-     * Checks if the contained domainname has a subdomain
-     *
-     * @return whether the domain has a subdomain
-     */
-    public boolean hasSubdomain(){
-        return domainName.indexOf('.') >= 0;
-    }
+	/**
+	 * Checks if the contained domainname has a subdomain
+	 *
+	 * @return whether the domain has a subdomain
+	 */
+	public boolean hasSubdomain() {
+		return domainName.indexOf('.') >= 0;
+	}
 
-    /**
-     * Slits the subdomain from the namespace zone.
-     * Before using this method, ensure that domain has a subdomain!
-     *
-     * @return subdomain
-     */
-    public String getSubdomain(){
-        return domainName.substring(0, domainName.lastIndexOf('.'));
-    }
+	/**
+	 * Slits the subdomain from the namespace zone. Before using this method, ensure that domain has a subdomain!
+	 *
+	 * @return subdomain
+	 */
+	public String getSubdomain() {
+		return domainName.substring(0, domainName.lastIndexOf('.'));
+	}
 
-    /**
-     * Returns the zone of the domain address.
-     *
-     * @return zone
-     */
-    public String getZone(){
-        String[] split = domainName.split("\\.");
+	/**
+	 * Returns the zone of the domain address.
+	 *
+	 * @return zone
+	 */
+	public String getZone() {
+		String[] split = domainName.split("\\.");
 
-        String zone = split[split.length-1];
+		String zone = split[split.length - 1];
 
-        return zone;
-    }
+		return zone;
+	}
 
-    /**
-     * Getter method for obtaining the contained domain address.
-     *
-     * @return this.domainName
-     */
-    public String getDomainName(){
-        return domainName;
-    }
+	/**
+	 * Getter method for obtaining the contained domain address.
+	 *
+	 * @return this.domainName
+	 */
+	public String getDomainName() {
+		return domainName;
+	}
 }

@@ -19,7 +19,9 @@ public abstract class DataPacket implements Serializable {
 		this.arguments = arguments;
 	}
 
-	public DataPacket(String response) {this.response = response;}
+	public DataPacket(String response) {
+		this.response = response;
+	}
 
 	public String getCommand() {
 		return command;

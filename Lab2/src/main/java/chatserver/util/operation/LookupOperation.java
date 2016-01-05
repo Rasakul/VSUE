@@ -9,7 +9,8 @@ import nameserver.helper.DomainResolver;
 import java.rmi.RemoteException;
 
 /**
- * respond the registered address of an user, if the arguments are valid, the user is logged and the requested user is registered
+ * respond the registered address of an user, if the arguments are valid, the user is logged and the requested user is
+ * registered
  */
 public class LookupOperation implements Operation {
 	private final Chatserver chatserver;
@@ -36,7 +37,7 @@ public class LookupOperation implements Operation {
 					INameserverForChatserver currentNameserver = chatserver.getRootNameserver();
 
 					//going through the nameservers until user userdomain is resolved and address has been found
-					while (usernameDomain.hasSubdomain()){
+					while (usernameDomain.hasSubdomain()) {
 						currentNameserver = currentNameserver.getNameserver(usernameDomain.getZone());
 						usernameDomain = new DomainResolver(usernameDomain.getSubdomain());
 					}

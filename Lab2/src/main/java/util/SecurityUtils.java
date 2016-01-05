@@ -5,8 +5,7 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import java.security.Security;
 
 /**
- * Please note that this class is not needed for Lab 1, but can later be
- * used in Lab 2.
+ * Please note that this class is not needed for Lab 1, but can later be used in Lab 2.
  * <p/>
  * Provides security provider related utility methods.
  */
@@ -16,8 +15,7 @@ public final class SecurityUtils {
 	}
 
 	/**
-	 * Registers the {@link BouncyCastleProvider} as the primary security
-	 * provider if necessary.
+	 * Registers the {@link BouncyCastleProvider} as the primary security provider if necessary.
 	 */
 	public static synchronized void registerBouncyCastle() {
 		if (Security.getProvider(BouncyCastleProvider.PROVIDER_NAME) == null) {

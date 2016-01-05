@@ -27,7 +27,7 @@ public class UDPListener implements Serverlistener {
 	private final PrintStream     userResponseStream;
 	private final ExecutorService executor;
 	private       DatagramSocket  socket;
-	private UDPChannel channel;
+	private       UDPChannel      channel;
 	private volatile boolean running = true;
 
 	public UDPListener(Chatserver chatserver, Config server_config, PrintStream userResponseStream,

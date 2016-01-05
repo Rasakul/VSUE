@@ -14,8 +14,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Reads commands from an {@link InputStream}, executes them and writes the
- * result to a {@link OutputStream}.
+ * Reads commands from an {@link InputStream}, executes them and writes the result to a {@link OutputStream}.
  */
 public class Shell implements Runnable, Closeable {
 	private static final PrintStream stdout = System.out;
@@ -54,16 +53,11 @@ public class Shell implements Runnable, Closeable {
 	}
 
 	/**
-	 * Executes commands read from the provided {@link InputStream} and prints
-	 * the output.
+	 * Executes commands read from the provided {@link InputStream} and prints the output.
 	 * <p/>
-	 * Note that this method blocks until either
-	 * <ul>
-	 * <li>This {@code Shell} is closed,</li>
-	 * <li>the end of the {@link InputStream} is reached,</li>
-	 * <li>or an {@link IOException} is thrown while reading from or writing to
-	 * the streams.</li>
-	 * </ul>
+	 * Note that this method blocks until either <ul> <li>This {@code Shell} is closed,</li> <li>the end of the {@link
+	 * InputStream} is reached,</li> <li>or an {@link IOException} is thrown while reading from or writing to the
+	 * streams.</li> </ul>
 	 */
 	@Override
 	public void run() {
@@ -125,8 +119,7 @@ public class Shell implements Runnable, Closeable {
 	}
 
 	/**
-	 * Writes {@code b.length} bytes from the specified byte array to the
-	 * provided {@link OutputStream}.
+	 * Writes {@code b.length} bytes from the specified byte array to the provided {@link OutputStream}.
 	 *
 	 * @param bytes the data
 	 *
@@ -137,14 +130,11 @@ public class Shell implements Runnable, Closeable {
 	}
 
 	/**
-	 * Reads a line of text.<br/>
-	 * A line is considered to be terminated by any one of a line feed (
-	 * {@code '\n'}), a carriage return ({@code '\r'}), or a carriage return
-	 * followed immediately by a linefeed.
+	 * Reads a line of text.<br/> A line is considered to be terminated by any one of a line feed ( {@code '\n'}), a
+	 * carriage return ({@code '\r'}), or a carriage return followed immediately by a linefeed.
 	 *
-	 * @return A String containing the contents of the line, not including any
-	 * line-termination characters, or {@code null} if the end of the
-	 * stream has been reached
+	 * @return A String containing the contents of the line, not including any line-termination characters, or {@code
+	 * null} if the end of the stream has been reached
 	 *
 	 * @throws IOException if an I/O error occurs
 	 */
@@ -155,14 +145,11 @@ public class Shell implements Runnable, Closeable {
 	}
 
 	/**
-	 * Reads characters into a portion of an array.<br/>
-	 * This method implements the general contract of the corresponding read
-	 * method of the {@link Reader} class.<br/>
-	 * If no data can be read i.e., the end of the stream is reached, an empty
-	 * buffer is returned.
+	 * Reads characters into a portion of an array.<br/> This method implements the general contract of the
+	 * corresponding read method of the {@link Reader} class.<br/> If no data can be read i.e., the end of the stream is
+	 * reached, an empty buffer is returned.
 	 * <p/>
-	 * If {@code len} is less than {@code 0}, the default buffer size (
-	 * {@code 4096}) is used.
+	 * If {@code len} is less than {@code 0}, the default buffer size ( {@code 4096}) is used.
 	 *
 	 * @param len maximum number of characters to read
 	 *
@@ -180,9 +167,8 @@ public class Shell implements Runnable, Closeable {
 	}
 
 	/**
-	 * Reads characters into a portion of an array.<br/>
-	 * This method is a convenience method of {@link #read(int)} using the
-	 * default buffer size.
+	 * Reads characters into a portion of an array.<br/> This method is a convenience method of {@link #read(int)} using
+	 * the default buffer size.
 	 *
 	 * @return the destination buffer containing the bytes read
 	 *
@@ -194,9 +180,8 @@ public class Shell implements Runnable, Closeable {
 	}
 
 	/**
-	 * Closes this {@link Shell} by closing the provided streams.<br/>
-	 * Note that {@link System#in} and {@link System#out} are not closed. They
-	 * have to be closed manually since closing them may affect other objects.
+	 * Closes this {@link Shell} by closing the provided streams.<br/> Note that {@link System#in} and {@link
+	 * System#out} are not closed. They have to be closed manually since closing them may affect other objects.
 	 */
 	@Override
 	public void close() {
@@ -218,12 +203,10 @@ public class Shell implements Runnable, Closeable {
 	}
 
 	/**
-	 * Registers all commands provided by the given object.<br/>
-	 * An accessible method is considered to be a command if it is annotated
-	 * with {@link Command}.
+	 * Registers all commands provided by the given object.<br/> An accessible method is considered to be a command if
+	 * it is annotated with {@link Command}.
 	 * <p/>
-	 * If a command with the same name is already registered, an
-	 * {@link IllegalArgumentException} is thrown.
+	 * If a command with the same name is already registered, an {@link IllegalArgumentException} is thrown.
 	 *
 	 * @param obj the object implementing commands to be registered
 	 *
@@ -245,8 +228,7 @@ public class Shell implements Runnable, Closeable {
 	}
 
 	/**
-	 * Parses the given command string, extracts the arguments and invokes the
-	 * command matching the input.
+	 * Parses the given command string, extracts the arguments and invokes the command matching the input.
 	 *
 	 * @param cmd the command string
 	 *
@@ -277,9 +259,8 @@ public class Shell implements Runnable, Closeable {
 	/**
 	 * Returns the underlying {@link BufferedReader} used for reading commands.
 	 * <p/>
-	 * <b>Note that this method provided direct access to the {@code Shell}
-	 * internals.<br/>
-	 * Invokers of this method have to ensure synchronization on their own.</b>
+	 * <b>Note that this method provided direct access to the {@code Shell} internals.<br/> Invokers of this method have
+	 * to ensure synchronization on their own.</b>
 	 *
 	 * @return the input
 	 */
@@ -290,9 +271,8 @@ public class Shell implements Runnable, Closeable {
 	/**
 	 * Returns the underlying {@link OutputStream} used for writing to messages.
 	 * <p/>
-	 * <b>Note that this method provided direct access to the {@code Shell}
-	 * internals.<br/>
-	 * Invokers of this method have to ensure synchronization on their own.</b>
+	 * <b>Note that this method provided direct access to the {@code Shell} internals.<br/> Invokers of this method have
+	 * to ensure synchronization on their own.</b>
 	 *
 	 * @return the output
 	 */
@@ -314,23 +294,18 @@ public class Shell implements Runnable, Closeable {
 	}
 
 	/**
-	 * Invokes the given method represented on the specified object with the
-	 * specified parameters.
+	 * Invokes the given method represented on the specified object with the specified parameters.
 	 * <p/>
-	 * If the method is static, then the specified obj argument is ignored. It
-	 * may be {@code null}.<br/>
-	 * If the number of formal parameters required by the underlying method is
-	 * {@code 0}, the supplied {@code args} array may be of length {@code 0} or
-	 * {@code null}.
+	 * If the method is static, then the specified obj argument is ignored. It may be {@code null}.<br/> If the number
+	 * of formal parameters required by the underlying method is {@code 0}, the supplied {@code args} array may be of
+	 * length {@code 0} or {@code null}.
 	 * <p/>
-	 * If the method is an instance method, it is invoked using dynamic method
-	 * lookup as documented in <i>The Java Language Specification, Second
-	 * Edition</i>, section 15.12.4.4; in particular, overriding based on the
-	 * runtime type of the target object will occur.
+	 * If the method is an instance method, it is invoked using dynamic method lookup as documented in <i>The Java
+	 * Language Specification, Second Edition</i>, section 15.12.4.4; in particular, overriding based on the runtime
+	 * type of the target object will occur.
 	 * <p/>
-	 * If the method completes normally, the value it returns is returned to the
-	 * caller. If the method return type is {@code void}, the invocation returns
-	 * {@code null}.
+	 * If the method completes normally, the value it returns is returned to the caller. If the method return type is
+	 * {@code void}, the invocation returns {@code null}.
 	 *
 	 * @see Method#invoke(Object, Object...)
 	 */

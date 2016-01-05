@@ -14,8 +14,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Please note that this class is not needed for Lab 1, but can later be
- * used in Lab 2.
+ * Please note that this class is not needed for Lab 1, but can later be used in Lab 2.
  * <p/>
  * Reads encryption keys from the file system.
  */
@@ -37,8 +36,7 @@ public final class Keys {
 	 *
 	 * @return the private key
 	 *
-	 * @throws IOException if an I/O error occurs or the security provider cannot handle
-	 *                     the file
+	 * @throws IOException if an I/O error occurs or the security provider cannot handle the file
 	 */
 	public static PrivateKey readPrivatePEM(File file) throws IOException {
 		/*
@@ -67,8 +65,7 @@ public final class Keys {
 	 *
 	 * @return the public key
 	 *
-	 * @throws IOException if an I/O error occurs or the security provider cannot handle
-	 *                     the file
+	 * @throws IOException if an I/O error occurs or the security provider cannot handle the file
 	 */
 	public static PublicKey readPublicPEM(File file) throws IOException {
 		PEMReader in = new PEMReader(new FileReader(file));
@@ -86,8 +83,7 @@ public final class Keys {
 	 *
 	 * @return the secret key
 	 *
-	 * @throws IOException if an I/O error occurs or the security provider cannot handle
-	 *                     the file
+	 * @throws IOException if an I/O error occurs or the security provider cannot handle the file
 	 */
 	public static Key readSecretKey(File file) throws IOException {
 		FileInputStream fis = new FileInputStream(file);
@@ -128,8 +124,7 @@ public final class Keys {
 	/**
 	 * Holds a table of passwords for key files.
 	 * <p/>
-	 * <b>Note that this class can be used alternatively to
-	 * {@link PasswordReader} especially for test automation.</b>
+	 * <b>Note that this class can be used alternatively to {@link PasswordReader} especially for test automation.</b>
 	 */
 	public static class StaticPasswordReader implements PasswordFinder {
 

@@ -35,7 +35,7 @@ public class RegisterOperation implements Operation {
 
 					// register user private address recursively
 					try {
-						chatserver.getRootNameserver().registerUser(username,address);
+						chatserver.getRootNameserver().registerUser(username, address);
 
 						income.setResponse("Successfully registered address for " + username);
 					} catch (RemoteException | AlreadyRegisteredException | InvalidDomainException e) {

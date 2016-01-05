@@ -17,10 +17,10 @@ import java.util.logging.Logger;
 public class UDPWorker implements Worker {
 	private static final Logger LOGGER = Logger.getLogger(UDPWorker.class.getName());
 
-	private final Chatserver     chatserver;
-	private final UDPDataPacket  udp_dataPacket;
-	private final DatagramSocket socket;
-	private final PrintStream    userResponseStream;
+	private final Chatserver       chatserver;
+	private final UDPDataPacket    udp_dataPacket;
+	private final DatagramSocket   socket;
+	private final PrintStream      userResponseStream;
 	private final SimpleUDPChannel channel;
 
 

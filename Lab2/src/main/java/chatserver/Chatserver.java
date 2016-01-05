@@ -171,7 +171,7 @@ public class Chatserver implements IChatserverCli, Runnable {
 	public Usermodul getUsermodul() {
 		return usermodul;
 	}
-
+	
 	public INameserver getRootNameserver() {
 		return rootNameserver;
 	}

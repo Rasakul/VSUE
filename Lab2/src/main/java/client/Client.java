@@ -23,7 +23,6 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
@@ -75,14 +74,14 @@ public class Client implements IClientCli, Runnable {
 		                                             config.getString("chatserver.key"));
 
 		try {
-//			Random random = new Random();
-//			if (random.nextInt() % 2 == 0) {
-//				LOGGER.info("using correct hmac, counter: " + COUNTER);
-//				this.integrityChecker = new IntegrityChecker(config.getString("hmac.key"));
-//			} else {
-//				LOGGER.info("using wrong hmac, counter: " + COUNTER);
-//				this.integrityChecker = new IntegrityChecker("keys/wrongHmac.key");
-//			}
+			//			Random random = new Random();
+			//			if (random.nextInt() % 2 == 0) {
+			//				LOGGER.info("using correct hmac, counter: " + COUNTER);
+			//				this.integrityChecker = new IntegrityChecker(config.getString("hmac.key"));
+			//			} else {
+			//				LOGGER.info("using wrong hmac, counter: " + COUNTER);
+			//				this.integrityChecker = new IntegrityChecker("keys/wrongHmac.key");
+			//			}
 			this.integrityChecker = new IntegrityChecker(config.getString("hmac.key"));
 		} catch (IOException e) {
 			LOGGER.log(Level.SEVERE, e.getMessage());
@@ -251,7 +250,7 @@ public class Client implements IClientCli, Runnable {
 						LOGGER.info("received: " + response);
 						split = response.split(" ");
 						String text = response.replace(split[0], "");
-						String command=split[1];
+						String command = split[1];
 
 						if (integrityChecker.check(response)) {
 							userResponseStream.println(text);

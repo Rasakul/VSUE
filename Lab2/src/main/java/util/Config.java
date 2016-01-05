@@ -14,8 +14,8 @@ public final class Config {
 	private Map<String, Object> properties = new HashMap<>();
 
 	/**
-	 * Creates an instance of Config which reads configuration data form
-	 * {@code .properties} file with given name found in classpath.
+	 * Creates an instance of Config which reads configuration data form {@code .properties} file with given name found
+	 * in classpath.
 	 *
 	 * @param name the name of the .properties file
 	 */
