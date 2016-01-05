@@ -3,7 +3,10 @@ package chatserver.util.operation;
 import channel.util.DataPacket;
 import chatserver.Chatserver;
 import chatserver.util.Usermodul;
+import nameserver.exceptions.AlreadyRegisteredException;
+import nameserver.exceptions.InvalidDomainException;
 
+import java.rmi.RemoteException;
 import java.util.regex.Pattern;
 
 /**
@@ -29,8 +32,15 @@ public class RegisterOperation implements Operation {
 				String[] split = address.split(":");
 				if (split[0] != null && PATTERN.matcher(split[0]).matches()) {
 					String username = usermodul.getUser(workerID);
-					usermodul.registerUser(username, address);
-					income.setResponse("Successfully registered address for " + username);
+
+					// register user private address recursively
+					try {
+						chatserver.getRootNameserver().registerUser(username,address);
+
+						income.setResponse("Successfully registered address for " + username);
+					} catch (RemoteException | AlreadyRegisteredException | InvalidDomainException e) {
+						income.setError(e.getMessage());
+					}
 
 				} else {
 					income.setError("invalid host");

@@ -11,7 +11,7 @@ public class Usermodul {
 
 	private SortedMap<String, String>  userPasswords;
 	private SortedMap<Integer, String> loggedinUser;
-	private SortedMap<String, String>  registerdUser;
+	//private SortedMap<String, String>  registerdUser;
 
 	public Usermodul() {
 
@@ -19,7 +19,7 @@ public class Usermodul {
 
 		userPasswords = Collections.synchronizedSortedMap(new TreeMap<String, String>());
 		loggedinUser = Collections.synchronizedSortedMap(new TreeMap<Integer, String>());
-		registerdUser = Collections.synchronizedSortedMap(new TreeMap<String, String>());
+		//registerdUser = Collections.synchronizedSortedMap(new TreeMap<String, String>());
 
 		for (String user : user_config.listKeys()) {
 			userPasswords.put(user.replaceAll(".password", ""), user_config.getString(user));
@@ -56,9 +56,10 @@ public class Usermodul {
 	 *
 	 * @return true, if user has registered an address, otherwise false
 	 */
-	public boolean isRegisterd(String username) {
+	/*public boolean isRegisterd(String username) {
 		return registerdUser.containsKey(username);
-	}
+	}*/
+
 
 	/**
 	 * returns the registered address for the user
@@ -67,9 +68,9 @@ public class Usermodul {
 	 *
 	 * @return the registered address
 	 */
-	public String getAdress(String username) {
+	/*public String getAdress(String username) {
 		return registerdUser.containsKey(username) ? registerdUser.get(username) : null;
-	}
+	}*/
 
 	/**
 	 * get the logged in of the worker by his ID
@@ -111,10 +112,10 @@ public class Usermodul {
 	 * @param username who wants to register
 	 * @param address
 	 */
-	public void registerUser(String username, String address) {
+	/*public void registerUser(String username, String address) {
 		if (registerdUser.containsKey(username)) registerdUser.remove(username);
 		registerdUser.put(username, address);
-	}
+	}*/
 
 	/**
 	 * log in the user and register the corresponding worker ID
