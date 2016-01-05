@@ -92,8 +92,10 @@ public class Nameserver implements INameserverCli, Runnable {
 
 			} catch (RemoteException e) {
 				LOGGER.log(Level.SEVERE, "Error while registering root domain.", e);
+				closeNameserver();
 			} catch (AlreadyBoundException e) {
 				LOGGER.log(Level.SEVERE, "Error while registering root domain.", e);
+				closeNameserver();
 			}
 
 			LOGGER.info("Root nameserver created.");
@@ -120,12 +122,16 @@ public class Nameserver implements INameserverCli, Runnable {
 				                                  remoteObject); // register nameserver recursively beginning at the root nameserver
 			} catch (RemoteException e) {
 				LOGGER.log(Level.SEVERE, "Error while registering domain: " + config.getString("domain"), e);
+				closeNameserver();
 			} catch (NotBoundException e) {
 				LOGGER.log(Level.SEVERE, "Error while registering domain: " + config.getString("domain"), e);
+				closeNameserver();
 			} catch (AlreadyRegisteredException e) {
 				LOGGER.log(Level.SEVERE, "Error while registering domain: " + config.getString("domain"), e);
+				closeNameserver();
 			} catch (InvalidDomainException e) {
 				LOGGER.log(Level.SEVERE, "Error while registering domain: " + config.getString("domain"), e);
+				closeNameserver();
 			}
 
 			LOGGER.info("Nameserver for hosting " + config.getString("domain") + " is created.");
@@ -165,6 +171,16 @@ public class Nameserver implements INameserverCli, Runnable {
 		}
 
 		return result;
+	}
+
+	public void closeNameserver(){
+		try {
+			userResponseStream.println("Please shut down this nameserver");
+			this.exit();
+
+		} catch (IOException e) {
+			LOGGER.info(e.getMessage());
+		}
 	}
 
 	@Command
