@@ -32,17 +32,15 @@ public class RegisterOperation implements Operation {
 				String[] split = address.split(":");
 				if (split[0] != null && PATTERN.matcher(split[0]).matches()) {
 					String username = usermodul.getUser(workerID);
+
+					// register user private address recursively
 					try {
 						chatserver.getRootNameserver().registerUser(username,address);
-					} catch (RemoteException e) {
-						e.printStackTrace();
-					} catch (AlreadyRegisteredException e) {
-						e.printStackTrace();
-					} catch (InvalidDomainException e) {
-						e.printStackTrace();
+
+						income.setResponse("Successfully registered address for " + username);
+					} catch (RemoteException | AlreadyRegisteredException | InvalidDomainException e) {
+						income.setError(e.getMessage());
 					}
-					//usermodul.registerUser(username, address);
-					income.setResponse("Successfully registered address for " + username);
 
 				} else {
 					income.setError("invalid host");

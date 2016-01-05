@@ -59,6 +59,7 @@ public class Chatserver implements IChatserverCli, Runnable {
 		executor = Executors.newCachedThreadPool();
 		usermodul = new Usermodul();
 
+		// setting root nameserver
 		try {
 			Registry registry = LocateRegistry.getRegistry(server_config.getString("registry.host"), server_config.getInt("registry.port"));
 			rootNameserver = (INameserver) registry.lookup(server_config.getString("root_id"));

@@ -52,7 +52,6 @@ public class Nameserver implements INameserverCli, Runnable {
 		this.userRequestStream = userRequestStream;
 		this.userResponseStream = userResponseStream;
 
-		// TODO
 		shell = new Shell(this.componentName,userRequestStream,userResponseStream);
 		shell.register(this);
 		new Thread(shell).start();
@@ -66,25 +65,51 @@ public class Nameserver implements INameserverCli, Runnable {
 	 */
 	public static void main(String[] args) {
 		Nameserver nameserver = new Nameserver(args[0], new Config(args[0]), System.in, System.out);
-		// TODO: start the nameserver
+
 		nameserver.run();
 	}
 
 
 	@Override
 	public void run() {
-		// TODO
-		if (config.listKeys().contains("domain")){ // non-root nameserver
+		if (!config.listKeys().contains("domain")){ // root nameserver, because its properties does not contain the domain property
 			try {
-				registry = LocateRegistry.getRegistry(config.getString("registry.host"),config.getInt("registry.port"));
+				LOGGER.info("Creating registry");
+				registry = LocateRegistry.createRegistry(config.getInt("registry.port")); // only root nameserver creates the registry
 
-				rootNameserver = (INameserver) registry.lookup(config.getString("root_id"));
+				remoteNamserverCallback = new RemoteNameserverCallback(); // callback class for remote functionality
 
-				remoteNamserverCallback = new RemoteNameserverCallback();
+				LOGGER.info("Creating remote object");
+				INameserver remoteObject = (INameserver) UnicastRemoteObject.exportObject(remoteNamserverCallback, 0); // create a remote object of the server object
 
-				INameserver remoteObject = (INameserver) UnicastRemoteObject.exportObject(remoteNamserverCallback, 0);
+				LOGGER.info("Binding remote object");
+				registry.bind(config.getString("root_id"),remoteObject); //bind the obtained remote object on specified binding name in the registry
 
-				rootNameserver.registerNameserver(config.getString("domain"),remoteObject,remoteObject);
+			} catch (RemoteException e) {
+				LOGGER.log(Level.SEVERE, "Error while registering root domain.", e);
+			} catch (AlreadyBoundException e) {
+				LOGGER.log(Level.SEVERE, "Error while registering root domain.", e);
+			}
+
+			LOGGER.info("Root nameserver created.");
+
+
+
+		} else { // not the root namesever
+			try {
+				LOGGER.info("Getting registry");
+				registry = LocateRegistry.getRegistry(config.getString("registry.host"),config.getInt("registry.port")); // getting registry
+
+				LOGGER.info("Obtaining root nameserver from registry");
+				rootNameserver = (INameserver) registry.lookup(config.getString("root_id")); // set root nameserver obtained from the registry
+
+				remoteNamserverCallback = new RemoteNameserverCallback(); // callback class for remote functionality
+
+				LOGGER.info("Creating remote object for nameserver");
+				INameserver remoteObject = (INameserver) UnicastRemoteObject.exportObject(remoteNamserverCallback, 0); // create a remote object of the server object
+
+				LOGGER.info("Register nameserver");
+				rootNameserver.registerNameserver(config.getString("domain"),remoteObject,remoteObject); // register nameserver recursively beginning at the root nameserver
 			} catch (RemoteException e) {
 				LOGGER.log(Level.SEVERE, "Error while registering domain: " + config.getString("domain"), e);
 			} catch (NotBoundException e) {
@@ -96,24 +121,6 @@ public class Nameserver implements INameserverCli, Runnable {
 			}
 
 			LOGGER.info("Nameserver for hosting " + config.getString("domain") + " is created.");
-
-		} else { // root nameserver
-			try {
-				registry = LocateRegistry.createRegistry(config.getInt("registry.port"));
-
-				remoteNamserverCallback = new RemoteNameserverCallback();
-
-				INameserver remoteObject = (INameserver) UnicastRemoteObject.exportObject(remoteNamserverCallback, 0);
-
-				registry.bind(config.getString("root_id"),remoteObject);
-
-			} catch (RemoteException e) {
-				LOGGER.log(Level.SEVERE, "Error while registering root domain.", e);
-			} catch (AlreadyBoundException e) {
-				LOGGER.log(Level.SEVERE, "Error while registering root domain.", e);
-			}
-
-			LOGGER.info("Root nameserver created.");
 		}
 
 	}
@@ -121,7 +128,6 @@ public class Nameserver implements INameserverCli, Runnable {
 	@Command
 	@Override
 	public String nameservers() throws IOException {
-		// TODO Auto-generated method stub
 		String result = "";
 
 		List<String> subHosts = remoteNamserverCallback.getSubHosts();
@@ -138,7 +144,6 @@ public class Nameserver implements INameserverCli, Runnable {
 	@Command
 	@Override
 	public String addresses() throws IOException {
-		// TODO Auto-generated method stub
 		String result = "";
 
 		HashMap<String,String> users = remoteNamserverCallback.getUsers();
@@ -149,7 +154,6 @@ public class Nameserver implements INameserverCli, Runnable {
 		for (String userName: userNames){
 			int index = userNames.indexOf(userName) + 1;
 			result += index + ". " + userName + " " + users.get(userName) + "\n";
-
 		}
 
 		return result;
@@ -159,6 +163,7 @@ public class Nameserver implements INameserverCli, Runnable {
 	@Override
 	public String exit() throws IOException {
 
+		LOGGER.info("Closing nameserver");
 		shell.close();
 
 		try {
@@ -168,7 +173,7 @@ public class Nameserver implements INameserverCli, Runnable {
 			LOGGER.log(Level.SEVERE, "Error while unexporting object.", e);
 		}
 
-		if (rootNameserver == null){
+		if (rootNameserver == null){ // root nameserver
 			try {
 				// unbind the remote object so that a client can't find it anymore
 				registry.unbind(config.getString("root_id"));
@@ -177,7 +182,6 @@ public class Nameserver implements INameserverCli, Runnable {
 			}
 		}
 
-		return "";
+		return "Nameserver closed";
 	}
-
 }
