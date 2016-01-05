@@ -3,6 +3,8 @@ package chatserver.util.operation;
 import channel.util.DataPacket;
 import chatserver.Chatserver;
 import chatserver.util.Usermodul;
+import nameserver.INameserverForChatserver;
+import nameserver.helper.Domain;
 
 import java.rmi.RemoteException;
 
@@ -28,7 +30,16 @@ public class LookupOperation implements Operation {
 				username = income.getArguments().get(0);
 				//if (usermodul.isRegisterd(username)) {
 					try {
-						income.setResponse(chatserver.getRootNameserver().lookup(username));
+						Domain usernameDomain = new Domain(username);
+						
+						INameserverForChatserver currentNameserver = chatserver.getRootNameserver();
+
+						while (usernameDomain.hasSubdomain()){
+							currentNameserver = currentNameserver.getNameserver(usernameDomain.getZone());
+							usernameDomain = new Domain(usernameDomain.getSubdomain());
+						}
+
+						income.setResponse(currentNameserver.lookup(usernameDomain.getDomainName()));
 					} catch (RemoteException e) {
 						income.setError(e.getMessage());
 					}

@@ -16,10 +16,7 @@ import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -131,7 +128,7 @@ public class Nameserver implements INameserverCli, Runnable {
 		Collections.sort(subHosts);
 
 		for (String subHost: subHosts){
-			int index = subHost.indexOf(subHost) + 1;
+			int index = subHosts.indexOf(subHost) + 1;
 			result +=  index + ". " + subHost + "\n";
 		}
 
@@ -145,12 +142,17 @@ public class Nameserver implements INameserverCli, Runnable {
 		String result = "";
 
 		HashMap<String,String> users = remoteNamserverCallback.getUsers();
+		List<String> userNames = new ArrayList<>(users.keySet());
 
-		for (String user: users.keySet()){
-			result += user + " " + users.get(user) + "\n";
+		Collections.sort(userNames);
+
+		for (String userName: userNames){
+			int index = userNames.indexOf(userName) + 1;
+			result += index + ". " + userName + " " + users.get(userName) + "\n";
+
 		}
 
-		return null;
+		return result;
 	}
 
 	@Command
