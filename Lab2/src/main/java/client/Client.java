@@ -23,6 +23,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
@@ -72,7 +73,16 @@ public class Client implements IClientCli, Runnable {
 
 		this.authenticator = new ClientAuthenticator(userResponseStream, config.getString("keys.dir"),
 		                                             config.getString("chatserver.key"));
+
 		try {
+//			Random random = new Random();
+//			if (random.nextInt() % 2 == 0) {
+//				LOGGER.info("using correct hmac, counter: " + COUNTER);
+//				this.integrityChecker = new IntegrityChecker(config.getString("hmac.key"));
+//			} else {
+//				LOGGER.info("using wrong hmac, counter: " + COUNTER);
+//				this.integrityChecker = new IntegrityChecker("keys/wrongHmac.key");
+//			}
 			this.integrityChecker = new IntegrityChecker(config.getString("hmac.key"));
 		} catch (IOException e) {
 			LOGGER.log(Level.SEVERE, e.getMessage());
@@ -241,15 +251,18 @@ public class Client implements IClientCli, Runnable {
 						LOGGER.info("received: " + response);
 						split = response.split(" ");
 						String text = response.replace(split[0], "");
+						String command=split[1];
 
 						if (integrityChecker.check(response)) {
 							userResponseStream.println(text);
 						} else {
 							userResponseStream.println("the client answer was compromised");
-							String tempered = "!tempered " + text;
-							tempered = integrityChecker.sign(tempered);
-							LOGGER.info("send: " + tempered);
-							channel.send(tempered.getBytes(StandardCharsets.UTF_8));
+							if (!command.equals("!tampered")) {
+								String tempered = "!tampered " + text;
+								tempered = integrityChecker.sign(tempered);
+								LOGGER.info("send: " + tempered);
+								channel.send(tempered.getBytes(StandardCharsets.UTF_8));
+							}
 						}
 						registerSuccess = false;
 						channel.close();
