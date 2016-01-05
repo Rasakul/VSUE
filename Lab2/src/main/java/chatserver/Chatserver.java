@@ -26,7 +26,7 @@ public class Chatserver implements IChatserverCli, Runnable {
 
 	public static int WORKER_COUNTER = 0;
 	private final String keys_dir;
-	private Key privatekey;
+	private       Key    privatekey;
 
 	private String         componentName;
 	private Config         server_config;
@@ -73,8 +73,7 @@ public class Chatserver implements IChatserverCli, Runnable {
 	}
 
 	/**
-	 * @param args the first argument is the name of the {@link Chatserver}
-	 *             component
+	 * @param args the first argument is the name of the {@link Chatserver} component
 	 */
 	public static void main(String[] args) throws IOException, InterruptedException {
 
@@ -129,14 +128,18 @@ public class Chatserver implements IChatserverCli, Runnable {
 	 * @param ID     new worker ID
 	 * @param worker worker who holds the connection
 	 */
-	public synchronized void addConnection(Integer ID, Worker worker) {openConnections.put(ID, worker); }
+	public synchronized void addConnection(Integer ID, Worker worker) {
+		openConnections.put(ID, worker);
+	}
 
 	/**
 	 * remove an open connection
 	 *
 	 * @param ID ID of the worker who holds the connection
 	 */
-	public synchronized void removeConnection(Integer ID) {openConnections.remove(ID); }
+	public synchronized void removeConnection(Integer ID) {
+		openConnections.remove(ID);
+	}
 
 	/**
 	 * get the connection by the ID of the worker who holds it
@@ -145,9 +148,13 @@ public class Chatserver implements IChatserverCli, Runnable {
 	 *
 	 * @return the worker who holds the connection
 	 */
-	public synchronized Worker getConnectionByID(Integer ID) {return openConnections.get(ID);}
+	public synchronized Worker getConnectionByID(Integer ID) {
+		return openConnections.get(ID);
+	}
 
-	public Usermodul getUsermodul() {return usermodul; }
+	public Usermodul getUsermodul() {
+		return usermodul;
+	}
 
 	public String getKeys_dir() {
 		return keys_dir;

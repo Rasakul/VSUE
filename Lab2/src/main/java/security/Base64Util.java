@@ -12,12 +12,10 @@ public class Base64Util {
     private static final Logger LOGGER = Logger.getLogger(Base64Util.class.getName());
 
     public static byte[] encodeBase64(byte[] bytes) {
-        LOGGER.fine("encodeBase64");
         return Base64.encode(bytes);
     }
 
     public static byte[] decodeBase64(byte[] bytes) {
-        LOGGER.fine("decodeBase64");
         return Base64.decode(bytes);
     }
 

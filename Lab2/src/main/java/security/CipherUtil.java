@@ -1,25 +1,32 @@
 package security;
 
+import org.omg.PortableInterceptor.LOCATION_FORWARD;
+
 import javax.crypto.Cipher;
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.SecretKeySpec;
 import java.security.Key;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
+import java.util.logging.Logger;
 
 /**
  * Created by lukas on 04.01.2016.
  */
 public class CipherUtil {
+    private static final Logger LOGGER = Logger.getLogger(CipherUtil.class.getName());
+
     private static final String ALGORITHM_RSA = "RSA/NONE/OAEPWithSHA256AndMGF1Padding";
-    private static final String ALGORITHM_AES = "RSA/NONE/OAEPWithSHA256AndMGF1Padding";
+    private static final String ALGORITHM_AES = "AES/CTR/NoPadding";
     private static final int KEYSIZE = 256;
 
     public static byte[] decryptRSA(byte[] text, Key key) {
+        LOGGER.info("decryptRSA");
         byte[] cipherText = null;
         try {
-            final Cipher cipher = Cipher.getInstance(ALGORITHM_RSA);
+            Cipher cipher = Cipher.getInstance(ALGORITHM_RSA);
             cipher.init(Cipher.DECRYPT_MODE, key);
             cipherText = cipher.doFinal(text);
         } catch (Exception e) {
@@ -30,9 +37,10 @@ public class CipherUtil {
 
 
     public static byte[] encryptRSA(byte[] text, Key key) {
+        LOGGER.info("encryptRSA");
         byte[] cipherText = null;
         try {
-            final Cipher cipher = Cipher.getInstance(ALGORITHM_RSA);
+            Cipher cipher = Cipher.getInstance(ALGORITHM_RSA);
             cipher.init(Cipher.ENCRYPT_MODE, key);
             cipherText = cipher.doFinal(text);
         } catch (Exception e) {
@@ -42,10 +50,13 @@ public class CipherUtil {
     }
 
     public static byte[] decryptAES(byte[] text, SecretKey key, byte[] iv_parameter) {
+        LOGGER.info("decryptAES");
         byte[] cipherText = null;
         try {
-            final Cipher cipher = Cipher.getInstance(ALGORITHM_AES);
-            cipher.init(Cipher.DECRYPT_MODE, key,new IvParameterSpec(iv_parameter));
+            IvParameterSpec iv = new IvParameterSpec(iv_parameter);
+
+            Cipher cipher = Cipher.getInstance(ALGORITHM_AES);
+            cipher.init(Cipher.DECRYPT_MODE, key, iv);
             cipherText = cipher.doFinal(text);
         } catch (Exception e) {
             e.printStackTrace();
@@ -54,11 +65,14 @@ public class CipherUtil {
     }
 
 
-    public static byte[] encryptAES(byte[] text, Key key, byte[] iv_parameter) {
+    public static byte[] encryptAES(byte[] text, SecretKey key, byte[] iv_parameter) {
+        LOGGER.info("encryptAES");
         byte[] cipherText = null;
         try {
-            final Cipher cipher = Cipher.getInstance(ALGORITHM_AES);
-            cipher.init(Cipher.ENCRYPT_MODE, key,new IvParameterSpec(iv_parameter));
+            IvParameterSpec iv = new IvParameterSpec(iv_parameter);
+
+            Cipher cipher = Cipher.getInstance(ALGORITHM_AES);
+            cipher.init(Cipher.ENCRYPT_MODE, key, iv);
             cipherText = cipher.doFinal(text);
         } catch (Exception e) {
             e.printStackTrace();

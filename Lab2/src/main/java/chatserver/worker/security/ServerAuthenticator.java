@@ -1,9 +1,9 @@
 package chatserver.worker.security;
 
 import channel.AESChannel;
-import channel.Channel;
 import channel.ObjectChannel;
 import chatserver.Chatserver;
+import chatserver.util.Usermodul;
 import chatserver.worker.TCPWorker;
 import security.Base64Util;
 import security.CipherUtil;
@@ -12,6 +12,7 @@ import util.Keyloader;
 import javax.crypto.SecretKey;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.util.Arrays;
@@ -19,125 +20,171 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Created by lukas on 04.01.2016.
+ * Class for the 3 steps Handshake Algorithm with the Server using RSA, Base64 and resulting in an AES encrypted
+ * Channel
  */
 public class ServerAuthenticator {
-    private static final Logger LOGGER = Logger.getLogger(ServerAuthenticator.class.getName());
-    private static State AUTH_STATE;
+	private static final Logger LOGGER = Logger.getLogger(ServerAuthenticator.class.getName());
+	private static State AUTH_STATE;
 
-    private final TCPWorker tcpWorker;
-    private final Chatserver chatserver;
-    private final AESChannel channel;
-    private final PrintStream userResponseStream;
-    private SecretKey secretKey;
-    private byte[] iv_parameter;
-    private byte[] server_challenge;
+	private final Chatserver    chatserver;
+	private final AESChannel    channel_byte;
+	private final PrintStream   userResponseStream;
+	private final Usermodul     usermodul;
+	private final ObjectChannel channel_object;
+	private final TCPWorker     tcpWorker;
+	private       SecretKey     secretKey;
+	private       byte[]        iv_parameter;
+	private       byte[]        server_challenge;
+	private       String        username;
+	private boolean error = false;
 
-    public ServerAuthenticator(TCPWorker tcpWorker, Chatserver chatserver, ObjectChannel channel, PrintStream userResponseStream) {
-        this.tcpWorker = tcpWorker;
-        this.chatserver = chatserver;
-        this.channel = (AESChannel) channel.getByteChannel();
-        this.userResponseStream = userResponseStream;
+	public ServerAuthenticator(TCPWorker tcpWorker, Chatserver chatserver, Socket clientSocket,
+	                           PrintStream userResponseStream) {
+		this.tcpWorker = tcpWorker;
+		this.chatserver = chatserver;
+		this.channel_object = new ObjectChannel(clientSocket);
+		this.channel_byte = (AESChannel) channel_object.getByteChannel();
+		this.userResponseStream = userResponseStream;
+		this.usermodul = chatserver.getUsermodul();
 
-        AUTH_STATE = State.STATE_0;
-    }
+		AUTH_STATE = State.UNKNOWN;
+	}
 
-    public boolean isAuthenticated() {
-        return AUTH_STATE == State.STATE_2;
-    }
+	public boolean isAuthenticated() {
+		return AUTH_STATE == State.AUTHENTICATED;
+	}
 
-    public void process() {
-        try {
-            while (!isAuthenticated()) {
-                byte[] message = channel.receive();
+	/**
+	 * performing the handshake algorithm with the client
+	 *
+	 * @return an ObjectChannel with AES encrypted if the Handshake was successful, otherwise null
+	 *
+	 * @throws IOException if an error occurs during the communication with the Socket
+	 */
+	public ObjectChannel authenticate() throws IOException {
+		while (!isAuthenticated() && !error) {
+			byte[] message = channel_byte.receive();
 
-                switch (AUTH_STATE) {
-                    case STATE_0:
-                        processStage0(message);
-                        channel.activateAESEncryption(secretKey,iv_parameter);
-                        break;
-                    case STATE_1:
-                        processStage1(message);
-                        break;
-                }
-            }
-        } catch (IOException | ClassNotFoundException e) {
-            e.printStackTrace();
-        }
-    }
+			switch (AUTH_STATE) {
+				case UNKNOWN:
+					firstStage(message);
+					channel_byte.activateAESEncryption(secretKey, iv_parameter);
+					break;
+				case HANDSHAKE:
+					secondStage(message);
+					break;
+			}
+		}
+		if (!error) {
+			login();
+		}
+		return channel_object;
+	}
 
-    private void processStage1(byte[] bytes) {
+	private void firstStage(byte[] bytes) {
+		LOGGER.info("performing first stage of handshake");
+		bytes = CipherUtil.decryptRSA(bytes, chatserver.getPrivatekey());
 
-        if (!Arrays.equals(bytes, this.server_challenge)) {
-            userResponseStream.println("Error, Server hacked!");
-        } else {
-            AUTH_STATE = State.STATE_2;
-        }
+		String message1 = new String(bytes, StandardCharsets.UTF_8);
+		LOGGER.fine(message1);
 
-        LOGGER.fine(new String(bytes, StandardCharsets.UTF_8));
+		String[] parts = message1.split(" ");
+		this.username = parts[1];
 
-    }
+		if (usermodul.checkKnownUser(username)) {
 
-    private void processStage0(byte[] bytes) {
-        bytes = CipherUtil.decryptRSA(bytes, chatserver.getPrivatekey());
+			String client_challenge_string = parts[2];
+			byte[] client_challenge = client_challenge_string.getBytes(StandardCharsets.UTF_8);
 
-        String message1 = new String(bytes, StandardCharsets.UTF_8);
-        String[] parts = message1.split(" ");
+			this.server_challenge = CipherUtil.generateRandomNumber_32Byte();
+			byte[] server_challenge_encoded = Base64Util.encodeBase64(server_challenge);
 
-        LOGGER.fine(message1);
+			this.secretKey = CipherUtil.generateSecretkey_AES();
+			byte[] secretKey_bytes = null;
+			if (secretKey != null) {
+				secretKey_bytes = secretKey.getEncoded();
+			} else {
+				error = true;
+			}
+			secretKey_bytes = Base64Util.encodeBase64(secretKey_bytes);
 
-        String client_challenge_string = parts[2];
-        String username = parts[1];
+			this.iv_parameter = CipherUtil.generateRandomNumber_16Byte();
+			byte[] iv_parameter_encoded = Base64Util.encodeBase64(iv_parameter);
 
-        byte[] client_challenge = client_challenge_string.getBytes(StandardCharsets.UTF_8);
+			byte[] message2 = "!ok ".getBytes(StandardCharsets.UTF_8);
 
-        byte[] randomNumber = CipherUtil.generateRandomNumber_32Byte();
-        this.server_challenge = Base64Util.encodeBase64(randomNumber);
+			message2 = concat(message2, client_challenge);
+			message2 = concat(message2, " ".getBytes(StandardCharsets.UTF_8));
+			message2 = concat(message2, server_challenge_encoded);
+			message2 = concat(message2, " ".getBytes(StandardCharsets.UTF_8));
+			message2 = concat(message2, secretKey_bytes);
+			message2 = concat(message2, " ".getBytes(StandardCharsets.UTF_8));
+			message2 = concat(message2, iv_parameter_encoded);
 
-        this.secretKey = CipherUtil.generateSecretkey_AES();
-        byte[] secretKey_bytes = null;
-        if (secretKey != null) secretKey_bytes = secretKey.getEncoded();
-        secretKey_bytes = Base64Util.encodeBase64(secretKey_bytes);
+			LOGGER.fine(new String(message2, StandardCharsets.UTF_8));
 
-        this.iv_parameter = CipherUtil.generateRandomNumber_16Byte();
-        iv_parameter = Base64Util.encodeBase64(iv_parameter);
+			try {
+				Key clientkey_public = Keyloader.loadClientPublickey(chatserver.getKeys_dir(), username);
+				message2 = CipherUtil.encryptRSA(message2, clientkey_public);
+			} catch (IOException e) {
+				LOGGER.log(Level.SEVERE, "error loading key", e);
+				exit();
+				return;
+			}
 
-        byte[] message2 = "!ok ".getBytes(StandardCharsets.UTF_8);
+			try {
+				channel_byte.send(message2);
+			} catch (IOException e) {
+				LOGGER.log(Level.SEVERE, "error on socket", e);
+				exit();
+				return;
+			}
 
-        message2 = concat(message2, client_challenge);
-        message2 = concat(message2, " ".getBytes(StandardCharsets.UTF_8));
-        message2 = concat(message2, server_challenge);
-        message2 = concat(message2, " ".getBytes(StandardCharsets.UTF_8));
-        message2 = concat(message2, secretKey_bytes);
-        message2 = concat(message2, " ".getBytes(StandardCharsets.UTF_8));
-        message2 = concat(message2, iv_parameter);
+			AUTH_STATE = State.HANDSHAKE;
+		} else {
+			exit();
+		}
+	}
 
-        LOGGER.fine(new String(message2, StandardCharsets.UTF_8));
+	private void secondStage(byte[] bytes) {
+		LOGGER.info("performing second stage of handshake");
 
-        try {
-            Key clientkey_public = Keyloader.loadClientPublickey(chatserver.getKeys_dir(), username);
-            message2 = CipherUtil.encryptRSA(message2, clientkey_public);
-        } catch (IOException e) {
-            LOGGER.log(Level.SEVERE, e.getMessage());
-        }
+		if (!Arrays.equals(bytes, this.server_challenge)) {
+			userResponseStream.println("Error, wrong client identity!");
+			LOGGER.log(Level.SEVERE, "Error, wrong client identity!");
+			LOGGER.log(Level.SEVERE,
+			           "generated challenge: " + new String(this.server_challenge, StandardCharsets.UTF_8));
+			LOGGER.log(Level.SEVERE, "client answer: " + new String(bytes, StandardCharsets.UTF_8));
+			exit();
+		} else {
+			AUTH_STATE = State.AUTHENTICATED;
+			LOGGER.fine(new String(bytes, StandardCharsets.UTF_8));
+			LOGGER.info("handshake successful");
+		}
+	}
 
-        try {
-            channel.send(message2);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+	private void login() {
+		LOGGER.info("login in the client");
+		usermodul.loginUser(tcpWorker.getID(), username);
+	}
 
-        AUTH_STATE = State.STATE_1;
+	private byte[] concat(byte[] first, byte[] second) {
+		byte[] result = Arrays.copyOf(first, first.length + second.length);
+		System.arraycopy(second, 0, result, first.length, second.length);
+		return result;
+	}
 
-    }
+	private void exit() {
+		error = true;
+		tcpWorker.close();
+	}
 
-    private byte[] concat(byte[] first, byte[] second) {
-        byte[] result = Arrays.copyOf(first, first.length + second.length);
-        System.arraycopy(second, 0, result, first.length, second.length);
-        return result;
-    }
+	public boolean hasError() {
+		return error;
+	}
 
-    private enum State {
-        STATE_0, STATE_1, STATE_2
-    }
+	private enum State {
+		UNKNOWN, HANDSHAKE, AUTHENTICATED
+	}
 }

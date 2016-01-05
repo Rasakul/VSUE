@@ -1,6 +1,5 @@
 package chatserver.listener;
 
-import channel.Channel;
 import channel.SimpleUDPChannel;
 import channel.UDPChannel;
 import channel.util.DataPacket;

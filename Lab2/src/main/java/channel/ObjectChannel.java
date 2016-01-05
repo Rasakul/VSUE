@@ -3,42 +3,59 @@ package channel;
 import channel.util.DataPacket;
 import security.Base64Util;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.net.Socket;
 import java.util.logging.Logger;
 
 /**
- * Created by lukas on 04.01.2016.
+ * Class for the communication of Objects over a TCP socket Uses a {@link ByteChannel} for the underlying communication
  */
-public class ObjectChannel {
-    private static final Logger LOGGER = Logger.getLogger(ObjectChannel.class.getName());
+public class ObjectChannel implements Closeable {
+	private static final Logger LOGGER = Logger.getLogger(ObjectChannel.class.getName());
 
-    private Channel channel;
+	private ByteChannel byteChannel;
 
-    public ObjectChannel(Socket socket) {
-        this.channel = new AESChannel(socket);
-    }
+	public ObjectChannel(Socket socket) {
+		this.byteChannel = new AESChannel(socket);
+	}
 
-    public void send(DataPacket datagramPacket) throws IOException {
-        LOGGER.fine("sending: " + datagramPacket);
-        channel.send(Base64Util.convertToBytes(datagramPacket));
-    }
+	/**
+	 * Sending a {@link DataPacket} over the byteChannel
+	 *
+	 * @param data packet for sending
+	 *
+	 * @throws IOException if an error occurs during the communication with the Socket
+	 */
+	public void send(DataPacket datagramPacket) throws IOException {
+		LOGGER.fine("sending: " + datagramPacket);
+		byteChannel.send(Base64Util.convertToBytes(datagramPacket));
+	}
 
-    public DataPacket receive() throws IOException, ClassNotFoundException {
-        DataPacket dataPacket = (DataPacket) Base64Util.convertFromBytes(channel.receive());
-        LOGGER.fine("receive: " + dataPacket);
-        return dataPacket ;
-    }
+	/**
+	 * Receiving a {@link DataPacket} over the byteChannel The method is a blocking I/O operation
+	 *
+	 * @return the received datapacket
+	 *
+	 * @throws IOException            if an error occurs during the communication with the Socket
+	 * @throws ClassNotFoundException if an error occurs during casting to DataPacket
+	 */
+	public DataPacket receive() throws IOException, ClassNotFoundException {
+		DataPacket dataPacket = (DataPacket) Base64Util.convertFromBytes(byteChannel.receive());
+		LOGGER.fine("receive: " + dataPacket);
+		return dataPacket;
+	}
 
-    public void setChannel(Channel channel) {
-        this.channel = channel;
-    }
+	@Override
+	public void close() throws IOException {
+		byteChannel.close();
+	}
 
-    public void close() throws IOException {
-        channel.close();
-    }
+	public ByteChannel getByteChannel() {
+		return byteChannel;
+	}
 
-    public Channel getByteChannel() {
-        return channel;
-    }
+	public void setByteChannel(ByteChannel byteChannel) {
+		this.byteChannel = byteChannel;
+	}
 }
