@@ -9,6 +9,7 @@ import cli.Command;
 import cli.Shell;
 import nameserver.INameserver;
 import util.Config;
+import util.Keyloader;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -17,6 +18,7 @@ import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
+import java.security.Key;
 import java.util.Hashtable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -28,6 +30,8 @@ public class Chatserver implements IChatserverCli, Runnable {
 	private static final Logger LOGGER = Logger.getLogger(Chatserver.class.getName());
 
 	public static int WORKER_COUNTER = 0;
+	private final String keys_dir;
+	private       Key    privatekey;
 
 	private String         componentName;
 	private Config         server_config;
@@ -54,6 +58,7 @@ public class Chatserver implements IChatserverCli, Runnable {
 		this.componentName = componentName;
 		this.server_config = server_config;
 		this.userResponseStream = userResponseStream;
+		this.keys_dir = server_config.getString("keys.dir");
 
 		openConnections = new Hashtable<>();
 		executor = Executors.newCachedThreadPool();
@@ -61,22 +66,30 @@ public class Chatserver implements IChatserverCli, Runnable {
 
 		// setting root nameserver
 		try {
-			Registry registry = LocateRegistry.getRegistry(server_config.getString("registry.host"), server_config.getInt("registry.port"));
+			Registry registry = LocateRegistry.getRegistry(server_config.getString("registry.host"),
+			                                               server_config.getInt("registry.port"));
 			rootNameserver = (INameserver) registry.lookup(server_config.getString("root_id"));
-		} catch (RemoteException e) {
-			LOGGER.log(Level.SEVERE, "Error while getting root nameserver.", e);
-		} catch (NotBoundException e) {
+		} catch (RemoteException | NotBoundException e) {
 			LOGGER.log(Level.SEVERE, "Error while getting root nameserver.", e);
 		}
 
+		try {
+			this.privatekey = Keyloader.loadServerPrivatekey(server_config.getString("key"));
+		} catch (IOException e) {
+			LOGGER.log(Level.SEVERE, e.getMessage());
+			try {
+				exit();
+			} catch (IOException e1) {
+				LOGGER.log(Level.SEVERE, e1.getMessage());
+			}
+		}
 
 		shell = new Shell(componentName, userRequestStream, userResponseStream);
 		shell.register(this);
 	}
 
 	/**
-	 * @param args the first argument is the name of the {@link Chatserver}
-	 *             component
+	 * @param args the first argument is the name of the {@link Chatserver} component
 	 */
 	public static void main(String[] args) throws IOException, InterruptedException {
 
@@ -131,14 +144,18 @@ public class Chatserver implements IChatserverCli, Runnable {
 	 * @param ID     new worker ID
 	 * @param worker worker who holds the connection
 	 */
-	public synchronized void addConnection(Integer ID, Worker worker) {openConnections.put(ID, worker); }
+	public synchronized void addConnection(Integer ID, Worker worker) {
+		openConnections.put(ID, worker);
+	}
 
 	/**
 	 * remove an open connection
 	 *
 	 * @param ID ID of the worker who holds the connection
 	 */
-	public synchronized void removeConnection(Integer ID) {openConnections.remove(ID); }
+	public synchronized void removeConnection(Integer ID) {
+		openConnections.remove(ID);
+	}
 
 	/**
 	 * get the connection by the ID of the worker who holds it
@@ -147,11 +164,23 @@ public class Chatserver implements IChatserverCli, Runnable {
 	 *
 	 * @return the worker who holds the connection
 	 */
-	public synchronized Worker getConnectionByID(Integer ID) {return openConnections.get(ID);}
+	public synchronized Worker getConnectionByID(Integer ID) {
+		return openConnections.get(ID);
+	}
 
-	public Usermodul getUsermodul() {return usermodul; }
+	public Usermodul getUsermodul() {
+		return usermodul;
+	}
 
 	public INameserver getRootNameserver() {
 		return rootNameserver;
+	}
+
+	public String getKeys_dir() {
+		return keys_dir;
+	}
+
+	public Key getPrivatekey() {
+		return privatekey;
 	}
 }

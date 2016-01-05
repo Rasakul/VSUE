@@ -1,15 +1,15 @@
 package chatserver.worker;
 
-import channel.TCPChannel;
+import channel.ObjectChannel;
 import channel.util.DataPacket;
 import channel.util.TCPDataPacket;
 import chatserver.Chatserver;
 import chatserver.util.OperationFactory;
+import chatserver.worker.security.ServerAuthenticator;
 
 import java.io.IOException;
 import java.io.PrintStream;
 import java.net.Socket;
-import java.net.SocketException;
 import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -19,15 +19,12 @@ import java.util.logging.Logger;
  */
 public class TCPWorker implements Worker {
 	private static final Logger LOGGER = Logger.getLogger(TCPWorker.class.getName());
-
-	private final int ID;
-
+	private final int              ID;
 	private final Chatserver       chatserver;
 	private final Socket           clientSocket;
 	private final PrintStream      userResponseStream;
 	private final OperationFactory operationFactory;
-	private final TCPChannel       channel;
-
+	private       ObjectChannel    channel;
 	private volatile boolean running    = true;
 	private          boolean clientquit = false;
 
@@ -38,33 +35,38 @@ public class TCPWorker implements Worker {
 		this.userResponseStream = userResponseStream;
 
 		this.operationFactory = new OperationFactory(chatserver);
-
-		this.channel = new TCPChannel(clientSocket);
 	}
 
 	@Override
 	public void run() {
 		try {
 
-			LOGGER.info("New TCP Worker with ID " + ID + "with client " + clientSocket.getInetAddress() + ":" +
+			LOGGER.info("New TCP Worker with ID " + ID + " with client " + clientSocket.getInetAddress() + ":" +
 			            clientSocket.getPort());
 
-			while (running) {
-				DataPacket dataPacket = (DataPacket) channel.receive();
-				String input = dataPacket.getCommand();
+			ServerAuthenticator serverAuthenticator =
+					new ServerAuthenticator(this, chatserver, clientSocket, userResponseStream);
+			this.channel = serverAuthenticator.authenticate();
 
-				if (input == null || input.equals("quit")) {
-					clientquit = true;
-					this.close();
-				}
+			if (serverAuthenticator.isAuthenticated() && !serverAuthenticator.hasError()) {
+				while (running) {
+					DataPacket dataPacket = channel.receive();
+					String input = dataPacket.getCommand();
 
-				if (running) {
-					LOGGER.fine("Worker " + ID + ": " + input);
-					channel.send(operationFactory.process(ID, dataPacket));
+					if (input == null || input.equals("quit")) {
+						clientquit = true;
+						this.close();
+					}
+
+					if (running) {
+						LOGGER.fine("Worker " + ID + ": " + input);
+						channel.send(operationFactory.process(ID, dataPacket));
+					}
 				}
 			}
+
 		} catch (IOException | ClassNotFoundException e) {
-			if (running && !(e instanceof SocketException)) LOGGER.log(Level.SEVERE, "Error on TCP Socket", e);
+			// if (running && !(e instanceof SocketException)) LOGGER.log(Level.SEVERE, "Error on TCP Socket", e);
 		} finally {
 			try {
 				LOGGER.info("Stopping TCP Worker " + ID);
@@ -85,7 +87,7 @@ public class TCPWorker implements Worker {
 			LOGGER.info("Stopping TCP Worker " + ID);
 			running = false;
 			if (!clientquit) channel.send(new TCPDataPacket("serverend", new ArrayList<String>()));
-			channel.close();
+			if (channel != null) channel.close();
 			if (clientSocket != null) clientSocket.close();
 			chatserver.getUsermodul().logoutUser(ID);
 			chatserver.removeConnection(ID);
@@ -99,7 +101,11 @@ public class TCPWorker implements Worker {
 		return running;
 	}
 
-	public TCPChannel getChannel() {
+	public ObjectChannel getChannel() {
 		return channel;
+	}
+
+	public int getID() {
+		return ID;
 	}
 }
