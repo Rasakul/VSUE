@@ -1,5 +1,6 @@
 package channel;
 
+import security.Base64Util;
 import security.CipherUtil;
 
 import javax.crypto.SecretKey;
@@ -48,7 +49,7 @@ public class AESChannel extends ByteChannel {
 		this.iv_parameter = iv_parameter;
 
 		LOGGER.info("activateAESEncryption, secretKey " + secretKey + ", iv_parameter " +
-		            new String(iv_parameter, StandardCharsets.UTF_8));
+		            new String(Base64Util.encodeBase64(iv_parameter), StandardCharsets.UTF_8));
 
 		this.aes_activated = true;
 	}
