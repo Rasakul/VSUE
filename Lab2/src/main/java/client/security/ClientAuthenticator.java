@@ -22,9 +22,10 @@ import java.util.logging.Logger;
  */
 public class ClientAuthenticator {
 	private static final Logger LOGGER = Logger.getLogger(ClientAuthenticator.class.getName());
+
 	private final PrintStream userResponseStream;
 	private final String      keys_dir;
-	private final Key         serverkey;
+	private       Key         serverkey;
 	private       AESChannel  channel_tcp;
 	private       String      username;
 	private       Key         clientkey;
@@ -34,10 +35,17 @@ public class ClientAuthenticator {
 	private byte[]        iv_parameter;
 	private SecretKeySpec secretKey;
 
-	public ClientAuthenticator(PrintStream userResponseStream, String keys_dir, Key serverkey) {
+	public ClientAuthenticator(PrintStream userResponseStream, String keys_dir, String serverkey_path) {
 		this.userResponseStream = userResponseStream;
 		this.keys_dir = keys_dir;
-		this.serverkey = serverkey;
+
+		try {
+			this.serverkey = Keyloader.loadServerPublickey(serverkey_path);
+		} catch (IOException e) {
+			error = true;
+			LOGGER.log(Level.SEVERE, "problem while loading the public server key", e);
+			userResponseStream.println("Error, can not find the public server key!");
+		}
 	}
 
 	/**
@@ -52,7 +60,7 @@ public class ClientAuthenticator {
 		error = false;
 		this.username = username;
 		this.channel_tcp = new AESChannel(socket_tcp);
-		loadClientKey();
+		loadKeys();
 
 		if (!error) {
 			try {
@@ -80,13 +88,13 @@ public class ClientAuthenticator {
 		return null;
 	}
 
-	private void loadClientKey() {
+	private void loadKeys() {
 		try {
 			this.clientkey = Keyloader.loadClientPrivatekey(keys_dir, username);
 		} catch (IOException e) {
 			error = true;
-			LOGGER.log(Level.SEVERE, "problem while loading key", e);
-			userResponseStream.println("Error, can not find private key!");
+			LOGGER.log(Level.SEVERE, "problem while loading the private key", e);
+			userResponseStream.println("Error, can not find the private key!");
 		}
 	}
 

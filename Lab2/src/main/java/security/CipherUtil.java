@@ -1,12 +1,11 @@
 package security;
 
-import org.omg.PortableInterceptor.LOCATION_FORWARD;
-
 import javax.crypto.Cipher;
 import javax.crypto.KeyGenerator;
+import javax.crypto.Mac;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
-import javax.crypto.spec.SecretKeySpec;
+import java.security.InvalidKeyException;
 import java.security.Key;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
@@ -20,6 +19,7 @@ public class CipherUtil {
 
     private static final String ALGORITHM_RSA = "RSA/NONE/OAEPWithSHA256AndMGF1Padding";
     private static final String ALGORITHM_AES = "AES/CTR/NoPadding";
+    private static final String ALGORITHM_HMAC = "HmacSHA256";
     private static final int KEYSIZE = 256;
 
     public static byte[] decryptRSA(byte[] text, Key key) {
@@ -103,5 +103,18 @@ public class CipherUtil {
             e.printStackTrace();
         }
         return null;
+    }
+
+    public static byte[] createHashMAC(byte[] text, Key secretKey){
+	    byte[] hash = null;
+	    try {
+		    Mac hMac = Mac.getInstance(ALGORITHM_HMAC);
+		    hMac.init(secretKey);
+		    hMac.update(text);
+		    hash = hMac.doFinal();
+	    } catch (NoSuchAlgorithmException | InvalidKeyException e) {
+		    e.printStackTrace();
+	    }
+	    return hash;
     }
 }

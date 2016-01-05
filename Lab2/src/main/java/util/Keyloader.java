@@ -43,4 +43,12 @@ public class Keyloader {
 		File pem = new File(server_path);
 		return Keys.readPublicPEM(pem);
 	}
+
+	public static Key loadSecretKey(String secret_kex) throws IOException {
+		String path = Keyloader.class.getProtectionDomain().getCodeSource().getLocation().getPath();
+
+		String server_path = path.replace("build/", secret_kex);
+		File hmac = new File(server_path);
+		return Keys.readSecretKey(hmac);
+	}
 }

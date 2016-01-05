@@ -1,19 +1,19 @@
 package client;
 
+import channel.Base64Channel;
 import channel.ObjectChannel;
 import channel.SimpleUDPChannel;
 import channel.UDPChannel;
-import channel.util.DataPacket;
 import channel.util.TCPDataPacket;
 import channel.util.UDPDataPacket;
 import cli.Command;
 import cli.Shell;
+import client.communication.IntegrityChecker;
 import client.communication.PrivateListener;
 import client.communication.PublicListener;
 import client.communication.UDPListener;
 import client.security.ClientAuthenticator;
 import util.Config;
-import util.Keyloader;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -21,7 +21,7 @@ import java.io.PrintStream;
 import java.net.DatagramSocket;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.security.Key;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.LogManager;
@@ -34,6 +34,7 @@ public class Client implements IClientCli, Runnable {
 	private final String              host;
 	private final Integer             port_tcp;
 	private final Integer             port_udp;
+	private       IntegrityChecker    integrityChecker;
 	private       ClientAuthenticator authenticator;
 	private       String              lastLookupAdress;
 	private volatile boolean lookupPerfomed  = false;
@@ -69,9 +70,10 @@ public class Client implements IClientCli, Runnable {
 		this.port_udp = config.getInt("chatserver.udp.port");
 		this.port_tcp = config.getInt("chatserver.tcp.port");
 
+		this.authenticator = new ClientAuthenticator(userResponseStream, config.getString("keys.dir"),
+		                                             config.getString("chatserver.key"));
 		try {
-			Key serverkey = Keyloader.loadServerPublickey(config.getString("chatserver.key"));
-			this.authenticator = new ClientAuthenticator(userResponseStream, config.getString("keys.dir"), serverkey);
+			this.integrityChecker = new IntegrityChecker(config.getString("hmac.key"));
 		} catch (IOException e) {
 			LOGGER.log(Level.SEVERE, e.getMessage());
 			exit();
@@ -227,17 +229,32 @@ public class Client implements IClientCli, Runnable {
 						String host = split[0];
 						String port = split[1];
 						Socket socket = new Socket(host, Integer.parseInt(port));
-						ObjectChannel channel = new ObjectChannel(socket);
-						ArrayList<String> args = new ArrayList<>();
-						DataPacket dataPacket = new TCPDataPacket("[private] " + username + ": " + message, args);
-						channel.send(dataPacket);
-						dataPacket = channel.receive();
-						String response = dataPacket.getResponse();
-						userResponseStream.println(response);
+						Base64Channel channel = new Base64Channel(socket);
+
+						message = "!msg [private] " + username + ": " + message;
+						message = integrityChecker.sign(message);
+						channel.send(message.getBytes(StandardCharsets.UTF_8));
+						LOGGER.info("send: " + message);
+
+						byte[] bytes = channel.receive();
+						String response = new String(bytes, StandardCharsets.UTF_8);
+						LOGGER.info("received: " + response);
+						split = response.split(" ");
+						String text = response.replace(split[0], "");
+
+						if (integrityChecker.check(response)) {
+							userResponseStream.println(text);
+						} else {
+							userResponseStream.println("the client answer was compromised");
+							String tempered = "!tempered " + text;
+							tempered = integrityChecker.sign(tempered);
+							LOGGER.info("send: " + tempered);
+							channel.send(tempered.getBytes(StandardCharsets.UTF_8));
+						}
 						registerSuccess = false;
 						channel.close();
 						socket.close();
-					} catch (IOException | ClassNotFoundException e) {
+					} catch (IOException e) {
 						e.printStackTrace();
 					}
 				}
@@ -282,7 +299,8 @@ public class Client implements IClientCli, Runnable {
 						}
 						if (registerSuccess) {
 							ServerSocket privateSocket = new ServerSocket(Integer.parseInt(port));
-							privateListener = new PrivateListener(this, privateSocket, userResponseStream);
+							privateListener =
+									new PrivateListener(this, privateSocket, userResponseStream, integrityChecker);
 							Thread thread = new Thread(privateListener);
 							thread.start();
 						}
