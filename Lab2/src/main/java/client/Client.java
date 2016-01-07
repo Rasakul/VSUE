@@ -8,7 +8,7 @@ import channel.util.TCPDataPacket;
 import channel.util.UDPDataPacket;
 import cli.Command;
 import cli.Shell;
-import client.communication.IntegrityChecker;
+import client.security.IntegrityChecker;
 import client.communication.PrivateListener;
 import client.communication.PublicListener;
 import client.communication.UDPListener;

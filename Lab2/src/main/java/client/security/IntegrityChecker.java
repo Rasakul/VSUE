@@ -1,4 +1,4 @@
-package client.communication;
+package client.security;
 
 import security.Base64Util;
 import security.CipherUtil;

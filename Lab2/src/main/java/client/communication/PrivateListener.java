@@ -3,6 +3,7 @@ package client.communication;
 import channel.Base64Channel;
 import channel.ByteChannel;
 import client.Client;
+import client.security.IntegrityChecker;
 
 import java.io.IOException;
 import java.io.PrintStream;
